@@ -27,12 +27,8 @@ log-fold changes will be reported in a log two fold change format, and if
 }
 \description{
 Performs differential expression testing on single cell data depending on the
-class of the object passed.
-}
-\details{
-Tests used
-- Seurat objects: Presto
-- Anndata objects: rank_genes_groups, using the "wilcoxon" method
+class of the object passed. See the "Methods (by class)" section for details
+on the test used.
 }
 \section{Methods (by class)}{
 \itemize{
