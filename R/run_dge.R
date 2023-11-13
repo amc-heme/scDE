@@ -66,6 +66,8 @@ run_dge.Seurat <-
       dge_table$logFC <-
         scDE:::to_log2(presto_cell_type$logFC)
     }
+
+    dge_table
   }
 
 # @describeIn run_dge SingleCellExperiment objects
