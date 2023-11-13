@@ -1,0 +1,12 @@
+Package: scDE
+Type: Package
+Title: Unified Single Cell Differential Expression
+Version: 0.1.0.9000
+Author: scDE Authors
+Description:
+    Tools for performing differential expression analysis in single cell objects
+    and returning common results.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
