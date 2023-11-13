@@ -56,12 +56,19 @@ run_dge.Seurat <-
     group_by,
     lfc_format = "default"
   ){
+    # Run presto
     dge_table <-
       presto::wilcoxauc(
         AML_Seurat,
         group_by = group_by
       )
 
+    # Convert to tibble, remove wilcoxon rank sum U statistic
+    dge_table <-
+      as_tibble() %>%
+      dplyr::select(-statistic)
+
+    # Convert to log2FC format if desired by user
     if (lfc_format == "log2"){
       dge_table$logFC <-
         scDE:::to_log2(presto_cell_type$logFC)
