@@ -63,8 +63,11 @@ run_dge.Seurat <-
         group_by = group_by
       )
 
+    print(colnames(dge_table))
+
     # Convert to tibble, remove wilcoxon rank sum U statistic
     dge_table <-
+      dge_table %>%
       as_tibble() %>%
       dplyr::select(-statistic)
 
