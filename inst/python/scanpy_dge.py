@@ -28,6 +28,6 @@ def scanpy_dge(adata, group_by, method = "wilcoxon"):
     
     # Fetch results in data frame format and return
     # Use group = None to return all entries
-    results_df = sc.get.rank_genes_groups_df(r.adata, group = None)
+    results_df = sc.get.rank_genes_groups_df(adata, group = None)
     
     return results_df
