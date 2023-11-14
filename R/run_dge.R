@@ -112,6 +112,11 @@ run_dge.Seurat <-
     if (lfc_format == "log2"){
       dge_table$logFC <-
         scDE:::to_log2(presto_cell_type$logFC)
+
+      # Rename column to specify log2FC values
+      dge_table <-
+        dge_table %>%
+        dplyr::rename(Log2FC = logFC)
     }
 
     dge_table
