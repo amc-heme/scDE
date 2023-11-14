@@ -13,6 +13,7 @@ run_dge(
   slot = NULL,
   lfc_format = "default",
   positive_only = FALSE,
+  remove_raw_pval = FALSE,
   ...
 )
 
@@ -22,7 +23,8 @@ run_dge(
   seurat_assay = NULL,
   slot = NULL,
   lfc_format = "default",
-  positive_only = FALSE
+  positive_only = FALSE,
+  remove_raw_pval = FALSE
 )
 
 \method{run_dge}{AnnDataR6}(
@@ -31,7 +33,8 @@ run_dge(
   seurat_assay = NULL,
   slot = NULL,
   lfc_format = "default",
-  positive_only = FALSE
+  positive_only = FALSE,
+  remove_raw_pval = FALSE
 )
 }
 \arguments{
@@ -59,6 +62,9 @@ log-fold changes will be reported in a log two fold change format, and if
 
 \item{positive_only}{If TRUE, only display genes that are up-regulated in a
 group compared to the reference (LFC > 0). Defaults to FALSE.}
+
+\item{remove_raw_pval}{If TRUE, show only the adjusted p-value.
+Defaults to FALSE.}
 }
 \description{
 Performs differential expression testing on single cell data depending on the

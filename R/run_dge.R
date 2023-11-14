@@ -23,6 +23,8 @@
 #' "ln", log-fold changes will be reported as a natural log fold change.
 #' @param positive_only If TRUE, only display genes that are up-regulated in a
 #' group compared to the reference (LFC > 0). Defaults to FALSE.
+#' @param remove_raw_pval If TRUE, show only the adjusted p-value.
+#' Defaults to FALSE.
 #'
 #' @rdname run_dge
 #'
@@ -35,6 +37,7 @@ run_dge <-
     slot = NULL,
     lfc_format = "default",
     positive_only = FALSE,
+    remove_raw_pval = FALSE,
     ...
   ){
     UseMethod("run_dge")
@@ -52,7 +55,8 @@ run_dge.default <-
     seurat_assay = NULL,
     slot = NULL,
     lfc_format = "default",
-    positive_only = FALSE
+    positive_only = FALSE,
+    remove_raw_pval = FALSE
   ){
     warning(
       paste0(
@@ -73,7 +77,8 @@ run_dge.Seurat <-
     seurat_assay = NULL,
     slot = NULL,
     lfc_format = "default",
-    positive_only = FALSE
+    positive_only = FALSE,
+    remove_raw_pval = FALSE
   ){
     # Define slot to use. If not specified by the user, use the
     # default slot, "data"
@@ -95,9 +100,13 @@ run_dge.Seurat <-
       dge_table %>%
       as_tibble() %>%
       dplyr::select(-statistic) %>%
+      # Remove p-value column if specified (only shows adjusted p-value)
+      {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
       # Return only genes that are upregulated in each group
       # if positive_only is TRUE
-      {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .}
+      {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .} %>%
+      # Sort by group, then by adjusted p-value, then by descending LFC
+      dplyr::arrange(group, padj, desc(abs(logFC)))
 
     # Convert to log2FC format if desired by user
     if (lfc_format == "log2"){
@@ -129,7 +138,8 @@ run_dge.AnnDataR6 <-
     seurat_assay = NULL,
     slot = NULL,
     lfc_format = "default",
-    positive_only = FALSE
+    positive_only = FALSE,
+    remove_raw_pval = FALSE
   ){
     library(reticulate)
 
@@ -164,8 +174,12 @@ run_dge.AnnDataR6 <-
       as_tibble() %>%
       rename(all_of(rename_cols)) %>%
       dplyr::select(!scores) %>%
+      # Remove p-value column if specified (only shows adjusted p-value)
+      {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
       # Return only genes that are upregulated in each group
       # if positive_only is TRUE
-      {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .}
+      {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .} %>%
+      # Sort by group, then by adjusted p-value, then by descending LFC
+      dplyr::arrange(group, pval_adj, desc(abs(log2FC)))
   }
 
