@@ -119,6 +119,10 @@ run_dge.Seurat <-
         dplyr::rename(Log2FC = logFC)
     }
 
+    # Put group before feature column
+    dge_table <-
+      dplyr::relocate(dge_table, group, .before = feature)
+
     dge_table
   }
 
