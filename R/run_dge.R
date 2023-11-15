@@ -192,7 +192,7 @@ run_dge.AnnDataR6 <-
       {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
       # Return only genes that are upregulated in each group
       # if positive_only is TRUE
-      {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .} %>%
+      {if (positive_only == TRUE) dplyr::filter(., log2FC > 0) else .} %>%
       # Sort by group, then by adjusted p-value, then by descending LFC
       dplyr::arrange(group, pval_adj, desc(abs(log2FC)))
   }
