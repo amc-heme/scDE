@@ -119,6 +119,11 @@ run_dge.Seurat <-
         dplyr::rename(Log2FC = logFC)
     }
 
+    # Rename adjusted p-value column to pval_adj
+    dge_table <-
+      dge_table %>%
+      dplyr::rename(pval_adj = padj)
+
     # Put group before feature column
     dge_table <-
       dplyr::relocate(dge_table, group, .before = feature)
