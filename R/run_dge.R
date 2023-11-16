@@ -18,9 +18,11 @@
 #' For SingleCellExperiment objects, the assay defaults to the main experiment,
 #' and for anndata objects the "X" matrix is used.
 #' @param lfc_format sets the format used for reporting log-fold changes. If
-#' "default", the default formats for each test used will be used. If "log2",
-#' log-fold changes will be reported in a log two fold change format, and if
-#' "ln", log-fold changes will be reported as a natural log fold change.
+#' "log2", log-fold changes will be reported in a log two fold change format,
+#' and if "ln", log-fold changes will be reported as a natural log fold change.
+#' "log2" is the default value. Presto uses a natural log fold change by
+#' default, so `lfc_format` should be set to "ln" if consistency with Presto is
+#' desired.
 #' @param positive_only If TRUE, only display genes that are up-regulated in a
 #' group compared to the reference (LFC > 0). Defaults to FALSE.
 #' @param remove_raw_pval If TRUE, show only the adjusted p-value.
@@ -35,7 +37,7 @@ run_dge <-
     group_by,
     seurat_assay = NULL,
     slot = NULL,
-    lfc_format = "default",
+    lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     ...
@@ -54,7 +56,7 @@ run_dge.default <-
     group_by,
     seurat_assay = NULL,
     slot = NULL,
-    lfc_format = "default",
+    lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE
   ){
@@ -76,7 +78,7 @@ run_dge.Seurat <-
     group_by,
     seurat_assay = NULL,
     slot = NULL,
-    lfc_format = "default",
+    lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE
   ){
@@ -111,7 +113,7 @@ run_dge.Seurat <-
     # Convert to log2FC format if desired by user
     if (lfc_format == "log2"){
       dge_table$logFC <-
-        scDE:::to_log2(dge_table$logFC)
+        scDE:::ln_to_log2(dge_table$logFC)
 
       # Rename column to specify log2FC values
       dge_table <-
@@ -151,7 +153,7 @@ run_dge.AnnDataR6 <-
     group_by,
     seurat_assay = NULL,
     slot = NULL,
-    lfc_format = "default",
+    lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE
   ){

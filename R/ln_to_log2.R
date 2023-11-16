@@ -7,7 +7,7 @@
 #' of 'undefined'). Many cell biology disciplines use log-2 fold changes
 #' instead of natural logs; due to this, communication of results would be
 #' optimized by transforming the natural log-fold changes in Presto to log-2 fold
-#' changes. to_log2() will take the natural log-fold changes from Presto and
+#' changes. ln_to_log2() will take the natural log-fold changes from Presto and
 #' convert them to a log-2 fold format.
 #'
 #' @param value Log-fold change values in the "LogFC" column of the default
@@ -16,7 +16,7 @@
 #' @return Returns Presto values in a log-2 fold change format.
 #'
 #' @noRd
-to_log2 <-
+ln_to_log2 <-
   function(value){
     log2(exp(value))
   }
