@@ -128,84 +128,66 @@ run_dge.Seurat <-
           )
 
       # Post-DGE modifications to table
-      # Compute LFC based on log scaling format (ln or log2)
-      if (lfc_format == "log2"){
-        dge_table <-
-          dge_table |>
-          dplyr::mutate(
-            log2FC =
-              # Calculation depends on if the matrix used has been
-              # natural log-transformed. This is the case for all slots
-              # except counts
-              if (slot == "data"){
-                # Natural log-transformed matrices: subtract ln-transformed
-                # means and divide by ln(2) to convert to log2 format
+      # 1. Add LFC, adjusted p-value columns
+      dge_table <-
+        dge_table %>%
+        dplyr::mutate(
+          # 1.1. Log-fold change
+          # Compute LFC based on log scaling format (ln or log2)
+          # Regardless of the format, the column is named logFC until the final
+          # step so downstream operations can identify the column more easily
+          logFC =
+            # Calculation depends on if the matrix used has been natural
+            # log-transformed, and on the LFC format requested by the user
+            # Matrices at all slots except counts are ln-transformed
+            if (slot == "data"){
+              if (lfc_format == "log2"){
+                # L2FC for log-transformed matrices:
+                # subtract ln-transformed means and divide by ln(2) to
+                # convert to log2 format
                 (foreground_mean - background_mean)/log(2)
-              } else {
-                # For non-transformed matrices, compute a fold-change
-                # in log-2 format
-                log2(foreground_mean/background_mean)
-              }
-          )
-      } else if (lfc_format == "ln"){
-        dge_table <-
-          dge_table |>
-          dplyr::mutate(
-            logFC =
-              # Calculation depends on if the matrix used has been
-              # natural log-transformed. This is the case for all slots
-              # except counts
-              if (slot == "data"){
-                # Natural log-transformed matrices:
+              } else if (lfc_format == "ln"){
+                # ln-FC for log-transformed matrices:
                 # subtract ln-transformed means
                 # foreground/background = ln(foreground) - ln(background)
                 foreground_mean - background_mean
-              } else {
-                # For non-transformed matrices, take the natural log
-                # in the fold change of the means
+              }
+            } else {
+              if (lfc_format == "log2"){
+                # L2FC for non-transformed matrices:
+                # compute a fold-change in log-2 format
+                log2(foreground_mean/background_mean)
+              } else if (lfc_format == "ln"){
+                # ln-FC for non-transformed matrices:
+                # Take the natural log in the fold change of the means
                 log(foreground_mean/background_mean)
               }
-          )
-      }
+            },
+          # 1.2. Add Benjamini-Hochberg p-value correction
+          padj = stats::p.adjust(p_val_raw, method = "BH"),
+          # 1.3. Add placeholder NA entries for pct_in, pct_out
+          # These are not computed by marker_features. These are included for
+          # consistency with the outputs of other DGE methods used in
+          # this package.
+          pct_in = NA_character_,
+          pct_out = NA_character_
+        )
 
+      # Average expression in group: convert to log-2 form?
       # dge_table <-
       #   dge_table |>
       #   dplyr::mutate(
-      #     # Average expression in group: convert to log-2 form?
       #     # (division is by ln(2))
       #     avgExpr = foreground_mean/log(2),
       #   )
 
-      # Return only genes that are upregulated in each group if positive_only
-      # is TRUE
-      # Filter based on LFC or L2FC column
-      if (remove_raw_pval == TRUE){
-        dge_table <-
-          dge_table %>%
-          {if (lfc_format == "log2") dplyr::filter(., log2FC > 0)
-            else if (lfc_format == "ln") dplyr::filter(., logFC > 0)}
-        }
-
-      # Additional modifications
+      # 2. Filter DGE table for non-zero LFC values, if positive_only is TRUE
       dge_table <-
         dge_table %>%
-        # Remove raw p-value column if specified (only shows adjusted p-value)
-        {if (remove_raw_pval == TRUE) dplyr::select(., -p_val_raw) else .} %>%
-        dplyr::mutate(
-          # Benjamini-Hochberg p-value correction
-          padj = stats::p.adjust(p_val_raw, method = "BH"),
-          # Add NA entries for pct_in, pct_out
-          # These are not computed by marker_features. We will include these
-          # values in acknowledgement of their utility, and presence in other
-          # DGE functions
-          pct_in = NA_character_,
-          pct_out = NA_character_
-        ) %>%
-        dplyr::select(
-          -any_of(c("background", "foreground_mean", "background_mean"))
-          )
+        {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .}
 
-      # Rename columns (old = new pairs)
+      # 3. Rename columns for output consistency
+      # Identify columns to rename (old = new pairs)
       rename_cols <-
         c("group" = "foreground",
           "pval" = "p_val_raw",
@@ -216,15 +198,30 @@ run_dge.Seurat <-
         dge_table %>%
         dplyr::rename(
           any_of(rename_cols)
-          ) %>%
-        # Also, move columns for consistency with output of other methods
+        )
+
+      # 4. Sort table by group, then by adjusted p-value, then by descending LFC
+      dge_table <-
+        dge_table %>%
+        dplyr::arrange(group, padj, desc(abs(logFC)))
+
+      # 5. Move columns for consistency with outputs from other DGE methods
+      dge_table <-
+        dge_table %>%
         dplyr::relocate(
-          c(avgExpr, log2FC, pval, padj),
+          c(avgExpr, logFC, pval, padj),
           .after = feature
+          )
+
+      # 6. Remove columns from output
+      # 6.1. Remove columns that are not common to outputs of other DGE methods
+      dge_table <-
+        dge_table %>%
+        dplyr::select(
+          -any_of(c("background", "foreground_mean", "background_mean"))
         ) %>%
-        # Sort by group, then by adjusted p-value, then by descending LFC
-        {if (lfc_format == "log2") dplyr::arrange(group, padj, desc(abs(log2FC)))
-          else if (lfc_format == "ln") dplyr::arrange(group, padj, desc(abs(logFC)))}
+        ## 6.2. Remove raw p-value column if remove_raw_pval == TRUE
+        {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .}
     } else if (test_use == "Presto"){
       # Run presto
       dge_table <-
