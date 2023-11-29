@@ -181,13 +181,8 @@ run_dge.Seurat <-
       #     avgExpr = foreground_mean/log(2),
       #   )
 
-      # 2. Filter DGE table for non-zero LFC values, if positive_only is TRUE
-      dge_table <-
-        dge_table %>%
-        {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .}
-
-      # 3. Rename columns for output consistency
-      # Identify columns to rename (old = new pairs)
+      # 2. Filter table, rename and remove columns
+      # Identify columns to be renamed in this step (old = new pairs)
       rename_cols <-
         c("group" = "foreground",
           "pval" = "p_val_raw",
@@ -196,31 +191,24 @@ run_dge.Seurat <-
 
       dge_table <-
         dge_table %>%
-        dplyr::rename(
-          any_of(rename_cols)
-        )
-
-      # 4. Sort table by group, then by adjusted p-value, then by descending LFC
-      dge_table <-
-        dge_table %>%
-        dplyr::arrange(group, padj, desc(abs(logFC)))
-
-      # 5. Move columns for consistency with outputs from other DGE methods
-      dge_table <-
-        dge_table %>%
+        # 2.1. Filter DGE table for non-zero LFC values, if positive_only is TRUE
+        {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .} %>%
+        # 2.2. Rename columns for output consistency
+        dplyr::rename(any_of(rename_cols)) %>%
+        # 2.3. Sort table by group, then by adjusted p-value,
+        # then by descending LFC
+        dplyr::arrange(group, padj, desc(abs(logFC))) %>%
+        # 2.4. Move columns for consistency with outputs from other DGE methods
         dplyr::relocate(
           c(avgExpr, logFC, pval, padj),
           .after = feature
-          )
-
-      # 6. Remove columns from output
-      # 6.1. Remove columns that are not common to outputs of other DGE methods
-      dge_table <-
-        dge_table %>%
+          ) %>%
+        # 2.5. Remove columns that are not common to outputs of
+        # other DGE methods
         dplyr::select(
           -any_of(c("background", "foreground_mean", "background_mean"))
         ) %>%
-        ## 6.2. Remove raw p-value column if remove_raw_pval == TRUE
+        # 2.6. Remove raw p-value column if remove_raw_pval == TRUE
         {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .}
     } else if (test_use == "Presto"){
       # Run presto
