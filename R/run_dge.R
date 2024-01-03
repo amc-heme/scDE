@@ -30,6 +30,10 @@
 #'
 #' @rdname run_dge
 #'
+#' @importFrom rlang %||%
+#'
+#' @importFrom magrittr %>%
+#'
 #' @export
 run_dge <-
   function(
@@ -223,7 +227,7 @@ run_dge.Seurat <-
       # Convert to tibble, remove wilcoxon rank sum U statistic
       dge_table <-
         dge_table %>%
-        as_tibble() %>%
+        tibble::as_tibble() %>%
         dplyr::select(-statistic) %>%
         # Remove p-value column if specified (only shows adjusted p-value)
         {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
@@ -286,6 +290,7 @@ run_dge.AnnDataR6 <-
     # Source fetch_anndata python script
     python_path =
       system.file(
+        "extdata",
         "Python",
         "scanpy_dge.py",
         package = "scDE"
