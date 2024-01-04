@@ -218,7 +218,7 @@ run_dge.Seurat <-
       # Run presto
       dge_table <-
         presto::wilcoxauc(
-          AML_Seurat,
+          object,
           group_by = group_by,
           assay = slot,
           seurat_assay = seurat_assay
