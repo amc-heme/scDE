@@ -2,7 +2,12 @@ Package: scDE
 Type: Package
 Title: Unified Single Cell Differential Expression
 Version: 0.1.0.9000
-Author: scDE Authors
+Authors@R: 
+    c(
+    person("William", "Showers", email = "bill.showers@refinedscience.com", role = c("aut", "cre")),
+    person("Jairav", "Desai", email = "jai.desai@refinedscience.com", role = c("aut")),
+    person("Austin", "Gillen", email = "austin.gillen@refinedscience.com", role = c("aut"))
+    )
 Description:
     Tools for performing differential expression analysis in single cell objects
     and returning common results. scDE currently accepts Seurat and Anndata 
@@ -14,11 +19,11 @@ Imports:
   magrittr,
   bslib,
   SCUBA
+Remotes: 
+  github::immunogenomics/presto,
+  github::amc-heme/SCUBA
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.2.3
-Remotes: 
-    github::immunogenomics/presto,
-    github::amc-heme/SCUBA
-URL: https://amc-heme.github.io/scDE/
+Roxygen: list(markdown = TRUE)
+LazyData: true
