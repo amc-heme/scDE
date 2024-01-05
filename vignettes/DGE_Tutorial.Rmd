@@ -64,7 +64,7 @@ th, td{
   padding: 5px 15px;
 }
 
-/* Also add a thick bottom border underneath the header */
+/* Also add a thick bottom border underneath the table header */
 .functions-table .header{
   border-style: solid;
   border-width: 0px 0px 4px 0px;
