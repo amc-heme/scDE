@@ -1,5 +1,5 @@
 ---
-title: "Usage and Examples"
+title: "scDE Usage and Examples"
 output: 
   html_document:
     theme:
@@ -55,6 +55,21 @@ library(scDE)
 th, td{
   padding: 0px 15px;
 }
+
+/* For the functions table, override the background colors applied
+   by R Markdown using the functions-table class*/
+.functions-table th,
+.functions-table td{
+  background-color: transparent !important;
+  padding: 5px 15px;
+}
+
+/* Also add a thick bottom border underneath the header */
+.functions-table .header{
+  border-style: solid;
+  border-width: 0px 0px 4px 0px;
+}
+
 
 .card-body{
   /* RS Light Grey #708082 
@@ -147,18 +162,18 @@ th, td{
 }*/
 ```
 
+# Unified Interface for DGE Functions
+
 This package is a wrapper for several differential expression functions, which are executed based on the class of the single cell object passed. The computations performed by each function are not modified by this package, and slight differences in output are observed for each function.
 
 ::: {.card .mb-3}
 ::: card-header
 <h4 class="card-title center">
-
-Functions Used
-
+Functions Applied
 </h4>
 :::
 
-::: card-body
+::: {.card-body .functions-table}
 +---------------------------------------+---------+---------------------------------+
 | Object Format                         | Package | Function                        |
 +=======================================+=========+=================================+
@@ -241,7 +256,7 @@ table |>
   dplyr::arrange(desc(auc)) 
 ```
 
-## Common syntax accross object formats
+## Common Syntax Accross Object Formats
 
 Marker identification can be performed on anndata objects using the exact same syntax. In the example below, marker identification is performed on the same reference object in an anndata format.
 
@@ -260,7 +275,7 @@ scDE::run_dge(
 
 The output format is largely consistent, with the exception of the AUC metric, which is not computed by Scanpy's `rank_genes_groups`. The average expression in the group is also not computed by the function.
 
-# Differential expression between two groups
+# Differential Expression Between Two Groups
 
 Oftentimes you will want to identify differentially expressed genes between two groups of cells, instead of genes expressed in one group vs. the rest of the cells. To do this, you will first subset the dataset for the two groups of interest, and then call `run_dge` on the subsetted object.
 
