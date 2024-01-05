@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 3300 2550" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g id="A-Cells" serif:id="A Cells" transform="matrix(1,0,0,1,95.9745,-496.404)">
+        <g id="Cell" transform="matrix(0.513756,0,0,0.513756,548.484,605.775)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(255,190,190);stroke:black;stroke-width:2.43px;"/>
+            </g>
+            <g transform="matrix(1.54569,0,0,1.40416,-385.902,-324.289)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,78,78);"/>
+            </g>
+        </g>
+        <g id="Cell1" serif:id="Cell" transform="matrix(0.558103,0,0,0.558103,708.479,502.371)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(255,190,190);stroke:black;stroke-width:2.24px;"/>
+            </g>
+            <g transform="matrix(1.55522,0,0,1.64019,-392.971,-499.661)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,78,78);"/>
+            </g>
+        </g>
+        <g id="Cell2" serif:id="Cell" transform="matrix(0.558103,0,0,0.558103,458.479,725.371)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(255,190,190);stroke:black;stroke-width:2.24px;"/>
+            </g>
+            <g transform="matrix(1.55522,0,0,1.64019,-392.971,-499.661)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,78,78);"/>
+            </g>
+        </g>
+        <g id="Cell3" serif:id="Cell" transform="matrix(0.558103,0,0,0.558103,869.479,561.371)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(255,190,190);stroke:black;stroke-width:2.24px;"/>
+            </g>
+            <g transform="matrix(1.55522,0,0,1.64019,-392.971,-499.661)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,78,78);"/>
+            </g>
+        </g>
+        <g id="Cell4" serif:id="Cell" transform="matrix(0.705649,0,0,0.705649,581.938,529.215)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(255,190,190);stroke:black;stroke-width:1.77px;"/>
+            </g>
+            <g transform="matrix(1.66249,0,0,1.53647,-472.565,-422.6)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,78,78);"/>
+            </g>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,134,-201.702)">
+        <g transform="matrix(0.648352,0,0,0.64433,263.593,210.366)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:6.45px;"/>
+        </g>
+        <g transform="matrix(1.15278,0,0,1.15278,39.079,85.8056)">
+            <g transform="matrix(83.3333,0,0,83.3333,554.181,453.652)">
+            </g>
+            <text x="494px" y="453.652px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">A</text>
+        </g>
+    </g>
+    <g id="B-Cells" serif:id="B Cells" transform="matrix(1,0,0,1,389.525,-388.702)">
+        <g id="Cell5" serif:id="Cell" transform="matrix(0.535171,0,0,0.519467,1287.42,615.349)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(185,219,255);stroke:black;stroke-width:2.37px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(81,116,153);"/>
+            </g>
+        </g>
+        <g id="Cell6" serif:id="Cell" transform="matrix(0.535171,0,0,0.519467,1150.74,679.514)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(185,219,255);stroke:black;stroke-width:2.37px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(81,116,153);"/>
+            </g>
+        </g>
+        <g id="Cell7" serif:id="Cell" transform="matrix(0.535171,0,0,0.519467,1436.04,541.453)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(185,219,255);stroke:black;stroke-width:2.37px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(81,116,153);"/>
+            </g>
+        </g>
+        <g id="Cell8" serif:id="Cell" transform="matrix(0.535171,0,0,0.519467,1295.48,474.859)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(185,219,255);stroke:black;stroke-width:2.37px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(81,116,153);"/>
+            </g>
+        </g>
+        <g id="Cell9" serif:id="Cell" transform="matrix(0.535171,0,0,0.519467,1116.38,561.176)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(185,219,255);stroke:black;stroke-width:2.37px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(81,116,153);"/>
+            </g>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,1139.03,-201.702)">
+        <g transform="matrix(0.648352,0,0,0.64433,263.593,210.366)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:6.45px;"/>
+        </g>
+        <g transform="matrix(1.15278,0,0,1.15278,39.079,85.8056)">
+            <g transform="matrix(83.3333,0,0,83.3333,554.181,453.652)">
+            </g>
+            <text x="494px" y="453.652px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">B</text>
+        </g>
+    </g>
+    <g id="D-cells" serif:id="D cells" transform="matrix(1,0,0,1,793.025,-333.603)">
+        <g id="Cell10" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1132.55,1039.72)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+        <g id="Cell11" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1405.35,844.729)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+        <g id="Cell12" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1416.74,955.273)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+        <g id="Cell13" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1279.63,1018.37)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+        <g id="Cell14" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1107.88,932.5)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+        <g id="Cell15" serif:id="Cell" transform="matrix(0.474441,0,0,0.474441,1262.07,897.392)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(242,239,239);stroke:black;stroke-width:2.63px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(162,162,162);"/>
+            </g>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,1447,254.897)">
+        <g transform="matrix(0.648352,0,0,0.64433,263.593,210.366)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:6.45px;"/>
+        </g>
+        <g transform="matrix(1.15278,0,0,1.15278,39.079,85.8056)">
+            <g transform="matrix(83.3333,0,0,83.3333,554.181,453.652)">
+            </g>
+            <text x="494px" y="453.652px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">D</text>
+        </g>
+    </g>
+    <g id="C-Cells" serif:id="C Cells" transform="matrix(1,0,0,1,546,-549.315)">
+        <g id="Cell16" serif:id="Cell" transform="matrix(0.586704,0,0,0.586704,480.225,1145.54)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.13px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+        <g id="Cell17" serif:id="Cell" transform="matrix(0.586704,0,0,0.586704,692.026,1129.11)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.13px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+        <g id="Cell18" serif:id="Cell" transform="matrix(0.586704,0,0,0.586704,751.87,1007.66)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.13px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+        <g id="Cell19" serif:id="Cell" transform="matrix(0.586704,0,0,0.586704,320.642,1069.26)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.13px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+        <g id="Cell20" serif:id="Cell" transform="matrix(0.586704,0,0,0.586704,570.578,1014.11)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.13px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+        <g id="Cell21" serif:id="Cell" transform="matrix(0.46488,0,0,0.46488,466.565,1032.69)">
+            <g transform="matrix(1,0,0,1,-182,150)">
+                <path d="M850,536C932.042,530.361 986.935,583.665 999,639.5C1001.74,652.16 1000.46,672.461 993.882,683.939C985.929,697.818 970.685,702.493 951.408,713.139C925.615,727.383 890.809,737.995 850,743C768.376,753.011 704.489,696.517 701,639.5C697.551,583.135 730.34,544.225 850,536Z" style="fill:rgb(133,153,251);stroke:black;stroke-width:2.69px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,19,-24)">
+                <ellipse cx="681" cy="792" rx="61" ry="49" style="fill:rgb(76,93,178);"/>
+            </g>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,438,254.897)">
+        <g transform="matrix(0.648352,0,0,0.64433,263.593,210.366)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:6.45px;"/>
+        </g>
+        <g transform="matrix(1.15278,0,0,1.15278,39.079,85.8056)">
+            <g transform="matrix(83.3333,0,0,83.3333,554.181,453.652)">
+            </g>
+            <text x="494px" y="453.652px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">C</text>
+        </g>
+    </g>
+    <g transform="matrix(7.36158,0,0,1.19298,-3029.07,-533.491)">
+        <g transform="matrix(0.943444,0,0,0.881443,81.3325,77.7887)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:0.84px;"/>
+        </g>
+        <g transform="matrix(0.105347,0,0,0.65007,454.784,251.836)">
+            <text x="667.425px" y="500.071px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">Groups created for each value of a metadata variable</text>
+            <g transform="matrix(83.3333,0,0,83.3333,2188.03,586.13)">
+            </g>
+            <text x="1244.84px" y="586.13px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">(clusters, samples<tspan x="1970.38px " y="586.13px ">,</tspan> etc.)</text>
+        </g>
+    </g>
+    <g transform="matrix(0.842433,0,0,0.842433,15.6849,-199.821)">
+        <g transform="matrix(1,0,0,0.900524,-690.204,186.419)">
+            <rect x="831" y="1683" width="901.204" height="764" style="fill:white;stroke:black;stroke-width:5.2px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,-725.204,-55)">
+            <text x="1023.33px" y="1958.65px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">1) <tspan x="1117.49px 1174.57px 1197.73px " y="1958.65px 1958.65px 1958.65px ">A v</tspan>s. B, C, D</text>
+            <text x="1021.78px" y="2094.71px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">2) B vs. <tspan x="1338.27px 1398.45px " y="2094.71px 2094.71px ">A,</tspan> C, D</text>
+            <text x="1021.78px" y="2230.77px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">3) C vs. <tspan x="1338.27px 1398.45px " y="2230.77px 2230.77px ">A,</tspan> B, D</text>
+            <g transform="matrix(83.3333,0,0,83.3333,1611.42,2366.83)">
+            </g>
+            <text x="1021.78px" y="2366.83px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">4) D vs. <tspan x="1338.27px 1398.45px " y="2366.83px 2366.83px ">A,</tspan> B, C</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-181.204,-25)">
+            <text x="661.243px" y="1809.29px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:83.333px;">Gene</text>
+            <g transform="matrix(48.5833,0,0,48.5833,883.96,1837.04)">
+            </g>
+            <text x="862.243px" y="1837.04px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:48.583px;">1</text>
+        </g>
+    </g>
+    <g transform="matrix(0.842433,0,0,0.842433,1013.89,-199.821)">
+        <g transform="matrix(1,0,0,0.900524,-690.204,186.419)">
+            <rect x="831" y="1683" width="901.204" height="764" style="fill:white;stroke:black;stroke-width:5.2px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,-725.204,-55)">
+            <text x="1023.33px" y="1958.65px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">1) <tspan x="1117.49px 1174.57px 1197.73px " y="1958.65px 1958.65px 1958.65px ">A v</tspan>s. B, C, D</text>
+            <text x="1021.78px" y="2094.71px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">2) B vs. <tspan x="1338.27px 1398.45px " y="2094.71px 2094.71px ">A,</tspan> C, D</text>
+            <text x="1021.78px" y="2230.77px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">3) C vs. <tspan x="1338.27px 1398.45px " y="2230.77px 2230.77px ">A,</tspan> B, D</text>
+            <g transform="matrix(83.3333,0,0,83.3333,1611.42,2366.83)">
+            </g>
+            <text x="1021.78px" y="2366.83px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">4) D vs. <tspan x="1338.27px 1398.45px " y="2366.83px 2366.83px ">A,</tspan> B, C</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-181.204,-25)">
+            <text x="657.357px" y="1809.29px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:83.333px;">Gene</text>
+            <g transform="matrix(48.5833,0,0,48.5833,887.847,1837.04)">
+            </g>
+            <text x="858.357px" y="1837.04px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:48.583px;">2</text>
+        </g>
+    </g>
+    <g transform="matrix(0.842433,0,0,0.842433,2287.89,-199.821)">
+        <g transform="matrix(1,0,0,0.900524,-690.204,186.419)">
+            <rect x="831" y="1683" width="901.204" height="764" style="fill:white;stroke:black;stroke-width:5.2px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,-725.204,-55)">
+            <text x="1023.33px" y="1958.65px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">1) <tspan x="1117.49px 1174.57px 1197.73px " y="1958.65px 1958.65px 1958.65px ">A v</tspan>s. B, C, D</text>
+            <text x="1021.78px" y="2094.71px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">2) B vs. <tspan x="1338.27px 1398.45px " y="2094.71px 2094.71px ">A,</tspan> C, D</text>
+            <text x="1021.78px" y="2230.77px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">3) C vs. <tspan x="1338.27px 1398.45px " y="2230.77px 2230.77px ">A,</tspan> B, D</text>
+            <g transform="matrix(83.3333,0,0,83.3333,1611.42,2366.83)">
+            </g>
+            <text x="1021.78px" y="2366.83px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:83.333px;">4) D vs. <tspan x="1338.27px 1398.45px " y="2366.83px 2366.83px ">A,</tspan> B, C</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-181.204,-25)">
+            <text x="657.697px" y="1809.29px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:83.333px;">Gene</text>
+            <g transform="matrix(48.5833,0,0,48.5833,887.507,1837.04)">
+            </g>
+            <text x="858.697px" y="1837.04px" style="font-family:'ProximaNova-Extrabld', 'Proxima Nova';font-weight:800;font-size:48.583px;">n</text>
+        </g>
+    </g>
+    <g id="Ellipsis" transform="matrix(1,0,0,1,70.5,-558.703)">
+        <g transform="matrix(1,0,0,1,-14,18)">
+            <circle cx="2163.5" cy="2064.5" r="18.5" style="stroke:black;stroke-width:4.17px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,98,18)">
+            <circle cx="2163.5" cy="2064.5" r="18.5" style="stroke:black;stroke-width:4.17px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,42,18)">
+            <circle cx="2163.5" cy="2064.5" r="18.5" style="stroke:black;stroke-width:4.17px;"/>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,-54.5,-464.203)">
+        <g transform="matrix(0.857143,0,0,1.08961,150.143,-172.776)">
+            <rect x="1051" y="1928" width="35" height="110.131" style="stroke:black;stroke-width:4.25px;"/>
+        </g>
+        <g transform="matrix(5.24849e-17,0.857143,-1.08961,6.67196e-17,3226.78,1072.14)">
+            <rect x="1051" y="1928" width="35" height="110.131" style="stroke:black;stroke-width:4.25px;"/>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,977.5,-464.203)">
+        <g transform="matrix(0.857143,0,0,1.08961,150.143,-172.776)">
+            <rect x="1051" y="1928" width="35" height="110.131" style="stroke:black;stroke-width:4.25px;"/>
+        </g>
+        <g transform="matrix(5.24849e-17,0.857143,-1.08961,6.67196e-17,3226.78,1072.14)">
+            <rect x="1051" y="1928" width="35" height="110.131" style="stroke:black;stroke-width:4.25px;"/>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,0.703704,163.211,340.665)">
+        <g transform="matrix(2.32601,0,0,1.25258,-839.241,298.015)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:2.37px;"/>
+        </g>
+        <g transform="matrix(0.910834,0,0,1.29434,-240.163,388.029)">
+            <text x="543.247px" y="476.998px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:68.618px;">One test per gene,</text>
+            <g transform="matrix(68.6184,0,0,68.6184,1002.69,547.861)">
+            </g>
+            <text x="682.477px" y="547.861px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:68.618px;">per group</text>
+        </g>
+    </g>
+    <g transform="matrix(1.26312,0,0,0.992715,630.261,1008.54)">
+        <g transform="matrix(4.37749,0,0,2.71566,-1764.46,-402.801)">
+            <rect x="451" y="479" width="273" height="194" style="fill:white;stroke:black;stroke-width:0.96px;"/>
+        </g>
+        <g transform="matrix(0.861959,0,0,1.09675,-141.691,490.648)">
+            <text x="494px" y="484.196px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">H</text>
+            <text x="540.25px" y="505.523px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:37.338px;">0</text>
+            <text x="561.016px" y="484.196px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">:</text>
+            <text x="596.603px" y="484.196px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:64.044px;">expression distributions</text>
+            <text x="1358.15px" y="484.196px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">do not dif<tspan x="1620.49px 1638.29px " y="484.196px 484.196px ">fe</tspan>r</text>
+            <text x="494px" y="567.757px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">between cells within the group vs. cells</text>
+            <text x="494px" y="651.318px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">outside of group</text>
+            <text x="494px" y="784.879px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">H</text>
+            <text x="540.25px" y="806.206px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:37.338px;">1</text>
+            <text x="561.016px" y="784.879px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">:</text>
+            <text x="596.603px" y="784.879px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:64.044px;">Expression distributions</text>
+            <g transform="matrix(64.0438,0,0,64.0438,1595.51,784.879)">
+            </g>
+            <text x="1365.25px" y="784.879px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:64.044px;">do dif<tspan x="1520.77px 1538.56px " y="784.879px 784.879px ">fe</tspan>r</text>
+        </g>
+    </g>
+</svg>
