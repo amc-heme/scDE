@@ -316,8 +316,8 @@ run_dge.AnnDataR6 <-
         "pct_nz_reference" = "pct_out")
 
     dge_table %>%
-      as_tibble() %>%
-      rename(all_of(rename_cols)) %>%
+      tibble::as_tibble() %>%
+      dplyr::rename(all_of(rename_cols)) %>%
       dplyr::select(!scores) %>%
       # Remove p-value column if specified (only shows adjusted p-value)
       {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
