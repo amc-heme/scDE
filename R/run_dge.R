@@ -308,12 +308,13 @@ run_dge.AnnDataR6 <-
         )
 
     rename_cols <-
-      c("names" = "feature",
-        "logfoldchanges" = "log2FC",
-        "pvals" = "pval",
-        "pvals_adj" = "pval_adj",
-        "pct_nz_group" = "pct_in",
-        "pct_nz_reference" = "pct_out")
+      c("feature" = "names",
+        "log2FC" = "logfoldchanges",
+        "pval" = "pvals",
+        "pval_adj" = "pvals_adj",
+        "pct_in" = "pct_nz_group",
+        "pct_out" = "pct_nz_reference"
+        )
 
     dge_table %>%
       tibble::as_tibble() %>%
