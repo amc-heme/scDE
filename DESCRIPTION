@@ -3,6 +3,7 @@ Type: Package
 Title: Unified Single Cell Differential Expression
 Version: 0.1.0.9000
 Author: scDE Authors
+Maintainer: Bioinformatics Group, RefinedScience
 Description:
     Tools for performing differential expression analysis in single cell objects
     and returning common results. scDE currently accepts Seurat and Anndata 
@@ -12,9 +13,13 @@ Imports:
   tibble,
   rlang,
   magrittr,
-  bslib
-License: MIT 
+  bslib,
+  SCUBA
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
+Remotes: 
+    github::immunogenomics/presto,
+    github::amc-heme/SCUBA
 URL: https://amc-heme.github.io/scDE/
