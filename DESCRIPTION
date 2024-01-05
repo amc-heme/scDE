@@ -3,7 +3,6 @@ Type: Package
 Title: Unified Single Cell Differential Expression
 Version: 0.1.0.9000
 Author: scDE Authors
-Maintainer: Bioinformatics Group, RefinedScience
 Description:
     Tools for performing differential expression analysis in single cell objects
     and returning common results. scDE currently accepts Seurat and Anndata 
