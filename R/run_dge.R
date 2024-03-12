@@ -126,7 +126,7 @@ run_dge.Seurat <-
       # Run BPCells marker_features
       dge_table <-
         BPCells::marker_features(
-          mat = object[[seurat_assay]][[slot]],
+          mat = object[[seurat_assay]]$data,
           groups = groups,
           method = "wilcoxon"
           )
