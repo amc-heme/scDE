@@ -19,6 +19,9 @@ Imports:
   magrittr,
   bslib,
   SCUBA
+Suggests:
+  testthat (>= 3.0.0),
+  reticulate
 Remotes: 
   github::immunogenomics/presto,
   github::amc-heme/SCUBA
