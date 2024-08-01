@@ -9,10 +9,12 @@
 #' @param group_by metadata variable to use for forming differential gene
 #' expression groups. A group will be created for all values in this variable
 #' present in the object passed to this function.
-#' @param slot The feature matrix slot to pull data from. If NULL, the "data"
-#' slot is used for Seurat objects, and the "logcounts" slot is used for
-#' SingleCellExperiment objects. This parameter is currently ignored for
-#' anndata objects: only the "X" matrix may be used.
+#' @param layer The feature matrix layer to pull data from. If NULL,
+#' test-specific conventions will be used. The "data" layer is used for Seurat
+#' objects, and the "logcounts" layer is used for SingleCellExperiment objects.
+#' This parameter is currently ignored for anndata objects: only the "X" matrix
+#' may be used. The layer parameter is also ignored in BPCells objects.
+#' @param slot No longer used. Please use `layer` instead.
 #' @param seurat_assay for Seurat objects, the assay to use for evaluating
 #' differences in expression. This is used only for tests on Seurat objects.
 #' For SingleCellExperiment objects, the assay defaults to the main experiment,
@@ -39,13 +41,30 @@ run_dge <-
   function(
     object,
     group_by,
+    layer = NULL,
     seurat_assay = NULL,
-    slot = NULL,
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    slot = lifecycle::deprecated(),
     ...
   ){
+    # Slot parameter has been deprecated and changed to layer for consistency
+    if (lifecycle::is_present(slot)){
+      lifecycle::deprecate_warn(
+        when = "0.2.0",
+        what = "run_dge(slot)",
+        details =
+          paste0(
+            "Please use the `layer` parameter instead. The `slot` ",
+            "parameter will be removed in 1.0.0."
+            )
+        )
+
+      # Direct slot to layer
+      layer <- slot
+      }
+
     UseMethod("run_dge")
   }
 
@@ -58,11 +77,12 @@ run_dge.default <-
   function(
     object,
     group_by,
+    layer = NULL,
     seurat_assay = NULL,
-    slot = NULL,
     lfc_format = "log2",
     positive_only = FALSE,
-    remove_raw_pval = FALSE
+    remove_raw_pval = FALSE,
+    slot = lifecycle::deprecated()
   ){
     warning(
       paste0(
@@ -80,42 +100,62 @@ run_dge.Seurat <-
   function(
     object,
     group_by,
+    layer = NULL,
     seurat_assay = NULL,
-    slot = NULL,
     lfc_format = "log2",
     positive_only = FALSE,
-    remove_raw_pval = FALSE
+    remove_raw_pval = FALSE,
+    slot = lifecycle::deprecated()
   ){
-    # Define slot to use. If not specified by the user, use the
-    # default slot, "data"
-    slot <- slot %||% SCUBA::default_slot(object)
+    # Define layer to use. If not specified by the user, use the
+    # default layer, "data"
+    layer <- layer %||% SCUBA::default_layer(object)
     # Seurat assay to use: "RNA" if not specified
     seurat_assay <- seurat_assay %||% "RNA"
 
-    # If matrix at the defined slot is a BPCells matrix, use the BPCells
+    # If matrix at the defined layer is a BPCells matrix, use the BPCells
     # marker_feature function.
     # If a dGC or dense matrix, use presto.
     # Code to test class of expression matrix depends on the structure of the
     # assay (v3 vs. v5)
-    print("Determine Test to use")
     if (inherits(object[[seurat_assay]], "Assay5")){
-      if (inherits(object[[seurat_assay]]@layers[[slot]], "IterableMatrix")){
+      if (inherits(object[[seurat_assay]]@layers[[layer]], "IterableMatrix")){
         test_use <- "BPCells"
       } else {
         test_use <- "Presto"
       }
     } else if (inherits(object[[seurat_assay]], "Assay")){
-      # Uses single brackets to pull via @ (@counts or @data)
-      if (inherits(object[[seurat_assay]][slot], "IterableMatrix")){
-        test_use <- "BPCells"
+      # Pull the matrix at the specified layer (slot in Seurat 4.x.x.) and
+      # test if it is a BPCells matrix (has the class IterableMatrix)
+      # object[[seurat_assay]][slot] was used originally but caused #6.
+      if ("layer" == "counts"){
+        is_BPCells <- inherits(object[[seurat_assay]]@counts, "IterableMatrix")
+      } else if ("layer" == "data"){
+        is_BPCells <- inherits(object[[seurat_assay]]@data, "IterableMatrix")
+      } else if ("layer" == "scale.data"){
+        is_BPCells <-
+          inherits(object[[seurat_assay]]@scale.data, "IterableMatrix")
       } else {
-        test_use <- "Presto"
+        stop(
+          paste0(
+            'The assay passed to the object (', seurat_assay, ') is a Seurat ',
+            'v3 assay. For v3 assays, `layer` must be set to "counts", ',
+            '"data", or "scale.data".'
+            )
+          )
       }
+
+      # Determine test to use based on results above for checking
+      # for a BPCells matrix
+      if (is_BPCells){
+        test_use <- "BPCells"
+        } else {
+          test_use <- "Presto"
+        }
     } else {
       stop('Unsupported assay class for assay "', seurat_assay, '".')
     }
 
-    print("Run appropriate test")
     if (test_use == "BPCells"){
       # marker_features requires vector of group labels by cell
       groups <-
@@ -128,6 +168,7 @@ run_dge.Seurat <-
       # Run BPCells marker_features
       dge_table <-
         BPCells::marker_features(
+          # Always uses the "data" layer
           mat = object[[seurat_assay]]$data,
           groups = groups,
           method = "wilcoxon"
@@ -145,8 +186,8 @@ run_dge.Seurat <-
           logFC =
             # Calculation depends on if the matrix used has been natural
             # log-transformed, and on the LFC format requested by the user
-            # Matrices at all slots except counts are ln-transformed
-            if (slot == "data"){
+            # Matrices at all layers except counts are ln-transformed
+            if (layer == "data"){
               if (lfc_format == "log2"){
                 # L2FC for log-transformed matrices:
                 # subtract ln-transformed means and divide by ln(2) to
@@ -187,7 +228,6 @@ run_dge.Seurat <-
       #     avgExpr = foreground_mean/log(2),
       #   )
 
-      print("Post-test filtering")
       # 2. Filter table, rename and remove columns
       # Identify columns to be renamed in this step (old = new pairs)
       rename_cols <-
@@ -223,7 +263,7 @@ run_dge.Seurat <-
         presto::wilcoxauc(
           object,
           group_by = group_by,
-          assay = slot,
+          assay = layer,
           seurat_assay = seurat_assay
         )
 
@@ -282,11 +322,12 @@ run_dge.AnnDataR6 <-
   function(
     object,
     group_by,
+    layer = NULL,
     seurat_assay = NULL,
-    slot = NULL,
     lfc_format = "log2",
     positive_only = FALSE,
-    remove_raw_pval = FALSE
+    remove_raw_pval = FALSE,
+    slot = lifecycle::deprecated()
   ){
     library(reticulate)
 
