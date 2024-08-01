@@ -97,6 +97,7 @@ run_dge.Seurat <-
     # If a dGC or dense matrix, use presto.
     # Code to test class of expression matrix depends on the structure of the
     # assay (v3 vs. v5)
+    print("Determine Test to use")
     if (inherits(object[[seurat_assay]], "Assay5")){
       if (inherits(object[[seurat_assay]]@layers[[slot]], "IterableMatrix")){
         test_use <- "BPCells"
@@ -114,6 +115,7 @@ run_dge.Seurat <-
       stop('Unsupported assay class for assay "', seurat_assay, '".')
     }
 
+    print("Run appropriate test")
     if (test_use == "BPCells"){
       # marker_features requires vector of group labels by cell
       groups <-
@@ -185,6 +187,7 @@ run_dge.Seurat <-
       #     avgExpr = foreground_mean/log(2),
       #   )
 
+      print("Post-test filtering")
       # 2. Filter table, rename and remove columns
       # Identify columns to be renamed in this step (old = new pairs)
       rename_cols <-
