@@ -128,11 +128,11 @@ run_dge.Seurat <-
       # Pull the matrix at the specified layer (slot in Seurat 4.x.x.) and
       # test if it is a BPCells matrix (has the class IterableMatrix)
       # object[[seurat_assay]][slot] was used originally but caused #6.
-      if ("layer" == "counts"){
+      if (layer == "counts"){
         is_BPCells <- inherits(object[[seurat_assay]]@counts, "IterableMatrix")
-      } else if ("layer" == "data"){
+      } else if (layer == "data"){
         is_BPCells <- inherits(object[[seurat_assay]]@data, "IterableMatrix")
-      } else if ("layer" == "scale.data"){
+      } else if (layer == "scale.data"){
         is_BPCells <-
           inherits(object[[seurat_assay]]@scale.data, "IterableMatrix")
       } else {
