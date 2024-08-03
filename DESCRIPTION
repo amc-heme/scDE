@@ -13,13 +13,16 @@ Description:
     and returning common results. scDE currently accepts Seurat and Anndata 
     objects.
 Imports:
-    presto,
-    tibble,
-    rlang,
-    magrittr,
-    bslib,
-    SCUBA,
-    lifecycle
+  presto,
+  tibble,
+  rlang,
+  magrittr,
+  bslib,
+  SCUBA,
+  lifecycle
+Suggests:
+  testthat (>= 3.0.0),
+  reticulate
 Remotes: 
   github::immunogenomics/presto,
   github::amc-heme/SCUBA

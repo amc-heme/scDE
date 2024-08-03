@@ -288,7 +288,7 @@ run_dge.Seurat <-
         # Rename column to specify log2FC values
         dge_table <-
           dge_table %>%
-          dplyr::rename(Log2FC = logFC)
+          dplyr::rename(log2FC = logFC)
       }
 
       # Rename adjusted p-value column to pval_adj
