@@ -1,7 +1,7 @@
 Package: scDE
 Type: Package
 Title: Unified Single Cell Differential Expression
-Version: 0.1.0.9000
+Version: 0.2.0.9000
 Authors@R: 
     c(
     person("William", "Showers", email = "bill.showers@refinedscience.com", role = c("aut", "cre")),
@@ -18,7 +18,8 @@ Imports:
   rlang,
   magrittr,
   bslib,
-  SCUBA
+  SCUBA,
+  lifecycle
 Suggests:
   testthat (>= 3.0.0),
   reticulate
@@ -27,6 +28,6 @@ Remotes:
   github::amc-heme/SCUBA
 License: MIT + file LICENSE
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Roxygen: list(markdown = TRUE)
 LazyData: true

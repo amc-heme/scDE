@@ -26,14 +26,38 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
+      # Install R
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
+      # Install R dependencies
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
+
+      # Set up Reticulate and Python packages before building website
+      - uses: actions/setup-python@v4
+        if: matrix.config.python != 'debug'
+        with:
+          python-version: ${{ matrix.config.python }}
+
+      - name: setup r-reticulate venv
+        shell: Rscript {0}
+        run: |
+
+          library(reticulate)
+
+          path_to_venv <- virtualenv_create(
+            envname = "r-reticulate",
+            python = Sys.which("python"), # placed on PATH by the setup-python action
+            packages = c(
+              "docutils", "pandas", "scipy", "matplotlib", "ipython",
+              "tabulate", "plotly", "psutil", "kaleido", "wrapt",
+              "anndata"
+              )
+            )
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
