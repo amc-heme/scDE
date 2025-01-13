@@ -211,7 +211,7 @@ run_dge.Seurat <-
               }
             },
           # 1.2. Add Benjamini-Hochberg p-value correction
-          padj = stats::p.adjust(p_val_raw, method = "BH"),
+          pval_adj = stats::p.adjust(p_val_raw, method = "BH"),
           # 1.3. Add placeholder NA entries for pct_in, pct_out
           # These are not computed by marker_features. These are included for
           # consistency with the outputs of other DGE methods used in
