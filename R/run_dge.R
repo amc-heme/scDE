@@ -211,13 +211,7 @@ run_dge.Seurat <-
               }
             },
           # 1.2. Add Benjamini-Hochberg p-value correction
-          padj = stats::p.adjust(p_val_raw, method = "BH"),
-          # 1.3. Add placeholder NA entries for pct_in, pct_out
-          # These are not computed by marker_features. These are included for
-          # consistency with the outputs of other DGE methods used in
-          # this package.
-          pct_in = NA_character_,
-          pct_out = NA_character_
+          pval_adj = stats::p.adjust(p_val_raw, method = "BH")
         )
 
       # Average expression in group: convert to log-2 form?
@@ -244,10 +238,10 @@ run_dge.Seurat <-
         dplyr::rename(any_of(rename_cols)) %>%
         # 2.3. Sort table by group, then by adjusted p-value,
         # then by descending LFC
-        dplyr::arrange(group, padj, desc(abs(logFC))) %>%
+        dplyr::arrange(group, pval_adj, desc(abs(logFC))) %>%
         # 2.4. Move columns for consistency with outputs from other DGE methods
         dplyr::relocate(
-          c(avgExpr, logFC, pval, padj),
+          c(avgExpr, logFC, pval, pval_adj),
           .after = feature
           ) %>%
         # 2.5. Remove columns that are not common to outputs of
