@@ -54,7 +54,7 @@ jobs:
             packages = c(
               "docutils", "pandas", "scipy", "matplotlib", "ipython",
               "tabulate", "plotly", "psutil", "kaleido", "wrapt",
-              "anndata"
+              "anndata", "scanpy"
               )
             )
 
