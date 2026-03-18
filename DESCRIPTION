@@ -22,9 +22,10 @@ Imports:
   lifecycle
 Suggests:
   testthat (>= 3.0.0),
-  reticulate
+  reticulate,
+  anndata
 Remotes: 
-  github::immunogenomics/presto,
+  github::amc-heme/presto,
   github::amc-heme/SCUBA
 License: MIT + file LICENSE
 Encoding: UTF-8

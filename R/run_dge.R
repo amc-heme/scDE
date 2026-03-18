@@ -329,7 +329,7 @@ run_dge.AnnDataR6 <-
     python_path =
       system.file(
         "extdata",
-        "Python",
+        "python",
         "scanpy_dge.py",
         package = "scDE"
       )
