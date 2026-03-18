@@ -22,7 +22,8 @@ Imports:
   lifecycle
 Suggests:
   testthat (>= 3.0.0),
-  reticulate
+  reticulate,
+  anndata
 Remotes: 
   github::amc-heme/presto,
   github::amc-heme/SCUBA

@@ -39,9 +39,8 @@ jobs:
 
       # Set up Reticulate and Python packages before building website
       - uses: actions/setup-python@v4
-        if: matrix.config.python != 'debug'
         with:
-          python-version: ${{ matrix.config.python }}
+          python-version: "3.11"
 
       - name: setup r-reticulate venv
         shell: Rscript {0}
@@ -58,6 +57,10 @@ jobs:
               "anndata"
               )
             )
+
+      - name: Install R anndata package
+        shell: Rscript {0}
+        run: install.packages("anndata")
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
