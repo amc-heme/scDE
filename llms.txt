@@ -1,0 +1,21 @@
+# scDE
+
+Unified differential expression testing for single cell objects
+
+# Package index
+
+## All functions
+
+- [`AML_Seurat`](https://amc-heme.github.io/scDE/reference/AML_Seurat.md)
+  : AML Reference Dataset
+- [`AML_h5ad()`](https://amc-heme.github.io/scDE/reference/AML_h5ad.md)
+  : anndata reference dataset
+- [`run_dge()`](https://amc-heme.github.io/scDE/reference/run_dge.md) :
+  Differential Gene Expression
+
+# Articles
+
+### All vignettes
+
+- [scDE Usage and
+  Examples](https://amc-heme.github.io/scDE/articles/DGE_Tutorial.md):
