@@ -29,6 +29,12 @@
 #' group compared to the reference (LFC > 0). Defaults to FALSE.
 #' @param remove_raw_pval If TRUE, show only the adjusted p-value.
 #' Defaults to FALSE.
+#' @param scran_style For SingleCellExperiment objects only. If FALSE
+#' (default), a true one-vs-rest Wilcoxon test is run for each group using
+#' `scran::pairwiseWilcox`, producing results comparable to presto, BPCells,
+#' and scanpy (includes an `auc` column). If TRUE, uses
+#' `scran::findMarkers` with pairwise comparisons combined across all groups
+#' (`pval.type = "any"`); no `auc` column is returned.
 #'
 #' @rdname run_dge
 #'
@@ -46,6 +52,7 @@ run_dge <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    scran_style = FALSE,
     slot = lifecycle::deprecated(),
     ...
   ){
@@ -298,14 +305,22 @@ run_dge.Seurat <-
     dge_table
   }
 
-#' @describeIn run_dge SingleCellExperiment objects: uses `scran::findMarkers`
-#' with the Wilcoxon rank-sum test (one-vs-all). Requires Bioconductor packages
-#' `scran` and `SummarizedExperiment` — install with
-#' `BiocManager::install(c("scran", "SummarizedExperiment"))`.
-#' Note: `avgExpr` is computed directly from the assay matrix (scran does not
-#' output mean expression). `log2FC` (or `logFC` when `lfc_format = "ln"`) is
-#' the `summary.logFC` from the best pairwise comparison, not a true
-#' one-vs-rest mean.
+#' @describeIn run_dge SingleCellExperiment objects: uses scran for Wilcoxon
+#' testing. Requires Bioconductor packages `scran` and `SummarizedExperiment` —
+#' install with `BiocManager::install(c("scran", "SummarizedExperiment"))`.
+#'
+#' By default (`scran_style = FALSE`), a true one-vs-rest Wilcoxon test is run
+#' for each group via `scran::pairwiseWilcox` + `scran::combineMarkers`,
+#' matching the behavior of presto, BPCells, and scanpy. Output includes an
+#' `auc` column.
+#'
+#' When `scran_style = TRUE`, `scran::findMarkers` is used with pairwise
+#' comparisons combined across all groups (`pval.type = "any"`). `log2FC` is
+#' `summary.logFC` from the best pairwise comparison (not a true one-vs-rest
+#' mean). No `auc` column is returned.
+#'
+#' In both cases, `avgExpr` is computed from the assay matrix via
+#' `Matrix::rowMeans()` (scran does not output mean expression).
 #'
 #' @export
 run_dge.SingleCellExperiment <-
@@ -317,6 +332,7 @@ run_dge.SingleCellExperiment <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    scran_style = FALSE,
     slot = lifecycle::deprecated()
   ){
     # Guard: required Bioconductor packages
@@ -337,7 +353,7 @@ run_dge.SingleCellExperiment <-
     layer <- layer %||% "logcounts"
 
     # Extract expression matrix and group labels
-    mat <- SummarizedExperiment::assay(object, layer)
+    mat    <- SummarizedExperiment::assay(object, layer)
     groups <- SummarizedExperiment::colData(object)[[group_by]]
 
     if (is.null(groups)){
@@ -348,39 +364,93 @@ run_dge.SingleCellExperiment <-
       )
     }
 
-    # Compute per-group average expression from the assay matrix
-    group_levels <- unique(as.character(groups))
+    groups        <- as.character(groups)
+    group_levels  <- unique(groups)
+
+    # Compute per-group average expression (used in both branches)
     avg_expr_list <-
       lapply(group_levels, function(g){
-        cells_in_group <- as.character(groups) == g
-        Matrix::rowMeans(mat[, cells_in_group, drop = FALSE])
+        Matrix::rowMeans(mat[, groups == g, drop = FALSE])
       })
     names(avg_expr_list) <- group_levels
 
-    # Run scran::findMarkers with Wilcoxon test
-    markers <-
-      scran::findMarkers(
-        mat,
-        groups = groups,
-        test.type = "wilcox",
-        full.stats = TRUE,
-        pval.type = "any"
-      )
+    if (!scran_style){
+      # ------------------------------------------------------------------ #
+      # Default: true one-vs-rest Wilcoxon via pairwiseWilcox +            #
+      # combineMarkers. One binary test per group (g vs. all others).      #
+      # Returns auc column; LFC computed from group means.                 #
+      # ------------------------------------------------------------------ #
+      dge_table <-
+        lapply(group_levels, function(g){
+          # Build binary group factor for this group vs. all others
+          binary_groups <- ifelse(groups == g, g, "other")
 
-    # Flatten named list of DataFrames into a single tibble
-    dge_table <-
-      lapply(names(markers), function(g){
-        df <- as.data.frame(markers[[g]])
-        tibble::tibble(
-          group    = g,
-          feature  = rownames(markers[[g]]),
-          avgExpr  = avg_expr_list[[g]][rownames(markers[[g]])],
-          log2FC   = df[["summary.logFC"]],
-          pval     = df[["p.value"]],
-          pval_adj = df[["FDR"]]
+          # Pairwise Wilcoxon on the binary factor
+          pw <- scran::pairwiseWilcox(mat, groups = binary_groups)
+
+          # combineMarkers on the single pair (g vs. other)
+          cm <-
+            scran::combineMarkers(
+              de.lists = pw$statistics,
+              pairs    = pw$pairs,
+              pval.type = "any"
+            )
+
+          df <- as.data.frame(cm[[g]])
+
+          # Compute LFC from log-space means (subtraction = log ratio)
+          # Divide by log(2) to convert ln-ratio -> log2FC
+          other_mean <- Matrix::rowMeans(
+            mat[, groups != g, drop = FALSE]
+          )
+          features <- rownames(cm[[g]])
+
+          log2fc_vals <-
+            (avg_expr_list[[g]][features] - other_mean[features]) / log(2)
+
+          tibble::tibble(
+            group    = g,
+            feature  = features,
+            avgExpr  = avg_expr_list[[g]][features],
+            auc      = df[["summary.AUC"]],
+            log2FC   = log2fc_vals,
+            pval     = df[["p.value"]],
+            pval_adj = df[["FDR"]]
+          )
+        }) %>%
+        dplyr::bind_rows()
+
+    } else {
+      # ------------------------------------------------------------------ #
+      # scran_style = TRUE: findMarkers with pairwise combinations.        #
+      # summary.logFC is from the best pairwise comparison (not one-vs-    #
+      # rest). No auc column.                                              #
+      # ------------------------------------------------------------------ #
+      markers <-
+        scran::findMarkers(
+          mat,
+          groups    = groups,
+          test.type = "wilcox",
+          full.stats = TRUE,
+          pval.type  = "any"
         )
-      }) %>%
-      dplyr::bind_rows()
+
+      dge_table <-
+        lapply(names(markers), function(g){
+          df       <- as.data.frame(markers[[g]])
+          features <- rownames(markers[[g]])
+
+          tibble::tibble(
+            group    = g,
+            feature  = features,
+            avgExpr  = avg_expr_list[[g]][features],
+            log2FC   = df[["summary.logFC"]],
+            pval     = df[["p.value"]],
+            pval_adj = df[["FDR"]]
+          )
+        }) %>%
+        dplyr::bind_rows()
+    }
 
     # Handle lfc_format: convert log2FC -> ln if requested
     if (lfc_format == "ln"){
@@ -394,7 +464,7 @@ run_dge.SingleCellExperiment <-
       lfc_col <- "log2FC"
     }
 
-    # Apply filters and sort
+    # Apply filters and sort (consistent with all other methods)
     dge_table %>%
       {if (positive_only) dplyr::filter(., .data[[lfc_col]] > 0) else .} %>%
       {if (remove_raw_pval) dplyr::select(., -pval) else .} %>%

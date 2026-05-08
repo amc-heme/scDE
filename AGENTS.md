@@ -57,10 +57,11 @@ Final sort: `group, pval_adj, desc(abs(log2FC))`.
 - `run_dge.AnnDataR6` ignores the `layer` param entirely — always uses `X` matrix. This is acknowledged in the code.
 - BPCells path uses `object[[seurat_assay]]$data` hardcoded (Assay5), not layer-parameterized.
 - `slot` param deprecated in 0.2.0, replaced by `layer`. Removal at 1.0.0.
-- `SingleCellExperiment` method uses `scran::findMarkers` (Wilcoxon, one-vs-all). Requires Bioconductor: `BiocManager::install(c("scran", "SummarizedExperiment"))` — listed in `Suggests`, so not auto-installed. Guards use `requireNamespace()` with actionable error messages.
+- `SingleCellExperiment` method uses scran for Wilcoxon testing. Requires Bioconductor: `BiocManager::install(c("scran", "SummarizedExperiment"))` — listed in `Suggests`, so not auto-installed. Guards use `requireNamespace()` with actionable error messages.
   - Default layer: `"logcounts"`.
   - `avgExpr` is computed from the assay matrix via `Matrix::rowMeans()` (scran does not output mean expression).
-  - `log2FC` is `summary.logFC` — best pairwise comparison, not true one-vs-rest mean.
+  - Default (`scran_style = FALSE`): true one-vs-rest via `scran::pairwiseWilcox` + `scran::combineMarkers` per group. Returns `auc` column (like presto). LFC computed from group means (subtraction in log space, divided by log(2) to yield log2FC).
+  - `scran_style = TRUE`: `scran::findMarkers(pval.type = "any")` pairwise approach. `log2FC` is `summary.logFC` from best pairwise comparison — not a true one-vs-rest mean. No `auc` column.
 - Package uses `%>%` (magrittr), not base `|>`.
 
 ## CI
