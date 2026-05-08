@@ -4,8 +4,8 @@
 #' class of the object passed. See the "Methods (by class)" section for details
 #' on the test used.
 #'
-#' @param object a single-cell object. Currently, Seurat and
-#' SingleCellExperiment objects are supported.
+#' @param object a single-cell object. Currently, Seurat,
+#' SingleCellExperiment, and AnnData objects are supported.
 #' @param group_by metadata variable to use for forming differential gene
 #' expression groups. A group will be created for all values in this variable
 #' present in the object passed to this function.
@@ -88,7 +88,7 @@ run_dge.default <-
       paste0(
         "run_dge does not know how to handle object of class ",
         paste(class(object), collapse = ", "),
-        ". Currently supported classes: Seurat and Anndata."
+        ". Currently supported classes: Seurat, SingleCellExperiment, and AnnData."
       )
     )
   }
@@ -298,15 +298,108 @@ run_dge.Seurat <-
     dge_table
   }
 
-# @describeIn run_dge SingleCellExperiment objects
-# @export
-# run_dge.SingleCellExperiment <-
-#   function(
-#     object
-#   ){
-#     # SingleCellExperiment objects: cell names are column names of object
-#     colnames(object)
-#   }
+#' @describeIn run_dge SingleCellExperiment objects: uses `scran::findMarkers`
+#' with the Wilcoxon rank-sum test (one-vs-all). Requires Bioconductor packages
+#' `scran` and `SummarizedExperiment` — install with
+#' `BiocManager::install(c("scran", "SummarizedExperiment"))`.
+#' Note: `avgExpr` is computed directly from the assay matrix (scran does not
+#' output mean expression). `log2FC` (or `logFC` when `lfc_format = "ln"`) is
+#' the `summary.logFC` from the best pairwise comparison, not a true
+#' one-vs-rest mean.
+#'
+#' @export
+run_dge.SingleCellExperiment <-
+  function(
+    object,
+    group_by,
+    layer = NULL,
+    seurat_assay = NULL,
+    lfc_format = "log2",
+    positive_only = FALSE,
+    remove_raw_pval = FALSE,
+    slot = lifecycle::deprecated()
+  ){
+    # Guard: required Bioconductor packages
+    if (!requireNamespace("scran", quietly = TRUE)){
+      stop(
+        "Package 'scran' is required for SingleCellExperiment objects. ",
+        "Install with: BiocManager::install('scran')"
+      )
+    }
+    if (!requireNamespace("SummarizedExperiment", quietly = TRUE)){
+      stop(
+        "Package 'SummarizedExperiment' is required for SingleCellExperiment ",
+        "objects. Install with: BiocManager::install('SummarizedExperiment')"
+      )
+    }
+
+    # Default layer for SCE is "logcounts"
+    layer <- layer %||% "logcounts"
+
+    # Extract expression matrix and group labels
+    mat <- SummarizedExperiment::assay(object, layer)
+    groups <- SummarizedExperiment::colData(object)[[group_by]]
+
+    if (is.null(groups)){
+      stop(
+        "Column '", group_by, "' not found in colData. ",
+        "Available columns: ",
+        paste(names(SummarizedExperiment::colData(object)), collapse = ", ")
+      )
+    }
+
+    # Compute per-group average expression from the assay matrix
+    group_levels <- unique(as.character(groups))
+    avg_expr_list <-
+      lapply(group_levels, function(g){
+        cells_in_group <- as.character(groups) == g
+        Matrix::rowMeans(mat[, cells_in_group, drop = FALSE])
+      })
+    names(avg_expr_list) <- group_levels
+
+    # Run scran::findMarkers with Wilcoxon test
+    markers <-
+      scran::findMarkers(
+        mat,
+        groups = groups,
+        test.type = "wilcox",
+        full.stats = TRUE,
+        pval.type = "any"
+      )
+
+    # Flatten named list of DataFrames into a single tibble
+    dge_table <-
+      lapply(names(markers), function(g){
+        df <- as.data.frame(markers[[g]])
+        tibble::tibble(
+          group    = g,
+          feature  = rownames(markers[[g]]),
+          avgExpr  = avg_expr_list[[g]][rownames(markers[[g]])],
+          log2FC   = df[["summary.logFC"]],
+          pval     = df[["p.value"]],
+          pval_adj = df[["FDR"]]
+        )
+      }) %>%
+      dplyr::bind_rows()
+
+    # Handle lfc_format: convert log2FC -> ln if requested
+    if (lfc_format == "ln"){
+      dge_table <-
+        dge_table %>%
+        dplyr::mutate(logFC = log2FC * log(2)) %>%
+        dplyr::select(-log2FC)
+
+      lfc_col <- "logFC"
+    } else {
+      lfc_col <- "log2FC"
+    }
+
+    # Apply filters and sort
+    dge_table %>%
+      {if (positive_only) dplyr::filter(., .data[[lfc_col]] > 0) else .} %>%
+      {if (remove_raw_pval) dplyr::select(., -pval) else .} %>%
+      dplyr::arrange(group, pval_adj, dplyr::desc(abs(.data[[lfc_col]])))
+  }
 
 #' @describeIn run_dge Anndata objects: uses Scanpy's rank_genes_groups
 #' function, with the "wilcoxon" method

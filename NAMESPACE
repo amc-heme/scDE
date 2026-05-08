@@ -2,6 +2,7 @@
 
 S3method(run_dge,AnnDataR6)
 S3method(run_dge,Seurat)
+S3method(run_dge,SingleCellExperiment)
 S3method(run_dge,default)
 export(AML_h5ad)
 export(run_dge)

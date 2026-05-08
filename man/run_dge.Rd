@@ -3,63 +3,79 @@
 \name{run_dge}
 \alias{run_dge}
 \alias{run_dge.Seurat}
+\alias{run_dge.SingleCellExperiment}
 \alias{run_dge.AnnDataR6}
 \title{Differential Gene Expression}
 \usage{
 run_dge(
   object,
   group_by,
+  layer = NULL,
   seurat_assay = NULL,
-  slot = NULL,
   lfc_format = "log2",
   positive_only = FALSE,
   remove_raw_pval = FALSE,
+  slot = lifecycle::deprecated(),
   ...
 )
 
 \method{run_dge}{Seurat}(
   object,
   group_by,
+  layer = NULL,
   seurat_assay = NULL,
-  slot = NULL,
   lfc_format = "log2",
   positive_only = FALSE,
-  remove_raw_pval = FALSE
+  remove_raw_pval = FALSE,
+  slot = lifecycle::deprecated()
+)
+
+\method{run_dge}{SingleCellExperiment}(
+  object,
+  group_by,
+  layer = NULL,
+  seurat_assay = NULL,
+  lfc_format = "log2",
+  positive_only = FALSE,
+  remove_raw_pval = FALSE,
+  slot = lifecycle::deprecated()
 )
 
 \method{run_dge}{AnnDataR6}(
   object,
   group_by,
+  layer = NULL,
   seurat_assay = NULL,
-  slot = NULL,
   lfc_format = "log2",
   positive_only = FALSE,
-  remove_raw_pval = FALSE
+  remove_raw_pval = FALSE,
+  slot = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{object}{a single-cell object. Currently, Seurat and
-SingleCellExperiment objects are supported.}
+\item{object}{a single-cell object. Currently, Seurat,
+SingleCellExperiment, and AnnData objects are supported.}
 
 \item{group_by}{metadata variable to use for forming differential gene
 expression groups. A group will be created for all values in this variable
 present in the object passed to this function.}
+
+\item{layer}{The feature matrix layer to pull data from. If NULL,
+test-specific conventions will be used. The "data" layer is used for Seurat
+objects, and the "logcounts" layer is used for SingleCellExperiment objects.
+This parameter is currently ignored for anndata objects: only the "X" matrix
+may be used. The layer parameter is also ignored in BPCells objects.}
 
 \item{seurat_assay}{for Seurat objects, the assay to use for evaluating
 differences in expression. This is used only for tests on Seurat objects.
 For SingleCellExperiment objects, the assay defaults to the main experiment,
 and for anndata objects the "X" matrix is used.}
 
-\item{slot}{The feature matrix slot to pull data from. If NULL, the "data"
-slot is used for Seurat objects, and the "logcounts" slot is used for
-SingleCellExperiment objects. This parameter is currently ignored for
-anndata objects: only the "X" matrix may be used.}
-
 \item{lfc_format}{sets the format used for reporting log-fold changes. If
 "log2", log-fold changes will be reported in a log two fold change format,
 and if "ln", log-fold changes will be reported as a natural log fold change.
 "log2" is the default value. Presto uses a natural log fold change by
-default, so `lfc_format` should be set to "ln" if consistency with Presto is
+default, so \code{lfc_format} should be set to "ln" if consistency with Presto is
 desired.}
 
 \item{positive_only}{If TRUE, only display genes that are up-regulated in a
@@ -67,6 +83,8 @@ group compared to the reference (LFC > 0). Defaults to FALSE.}
 
 \item{remove_raw_pval}{If TRUE, show only the adjusted p-value.
 Defaults to FALSE.}
+
+\item{slot}{No longer used. Please use \code{layer} instead.}
 }
 \description{
 Performs differential expression testing on single cell data depending on the
@@ -76,6 +94,15 @@ on the test used.
 \section{Methods (by class)}{
 \itemize{
 \item \code{run_dge(Seurat)}: Seurat objects: uses Presto
+
+\item \code{run_dge(SingleCellExperiment)}: SingleCellExperiment objects: uses \code{scran::findMarkers}
+with the Wilcoxon rank-sum test (one-vs-all). Requires Bioconductor packages
+\code{scran} and \code{SummarizedExperiment} — install with
+\code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
+Note: \code{avgExpr} is computed directly from the assay matrix (scran does not
+output mean expression). \code{log2FC} (or \code{logFC} when \code{lfc_format = "ln"}) is
+the \code{summary.logFC} from the best pairwise comparison, not a true
+one-vs-rest mean.
 
 \item \code{run_dge(AnnDataR6)}: Anndata objects: uses Scanpy's rank_genes_groups
 function, with the "wilcoxon" method
