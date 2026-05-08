@@ -33,6 +33,12 @@
 #' @export
 #'
 AML_h5ad <- function(){
+  if (!requireNamespace("anndata", quietly = TRUE)){
+    stop(
+      "Package 'anndata' is required to load AML_h5ad(). ",
+      "Install with: install.packages('anndata')"
+    )
+  }
   anndata::read_h5ad(
     system.file(
       "extdata",

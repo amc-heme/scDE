@@ -416,7 +416,12 @@ run_dge.AnnDataR6 <-
     remove_raw_pval = FALSE,
     slot = lifecycle::deprecated()
   ){
-    library(reticulate)
+    if (!requireNamespace("reticulate", quietly = TRUE)){
+      stop(
+        "Package 'reticulate' is required for AnnData objects. ",
+        "Install with: install.packages('reticulate')"
+      )
+    }
 
     # Source fetch_anndata python script
     python_path =
