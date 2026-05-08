@@ -15,8 +15,10 @@ Description:
 Imports:
   presto,
   tibble,
+  dplyr,
   rlang,
   magrittr,
+  Matrix,
   bslib,
   SCUBA,
   lifecycle
