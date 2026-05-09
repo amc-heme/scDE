@@ -377,6 +377,34 @@ run_dge.SingleCellExperiment <-
 
     groups <- as.character(groups)
 
+    # --- Input validation ---
+
+    if (anyNA(groups)){
+      stop(
+        "Column '", group_by, "' contains ", sum(is.na(groups)), " NA value(s). ",
+        "Remove or impute NA cells before running run_dge."
+      )
+    }
+
+    group_levels <- unique(groups)
+
+    if (length(group_levels) < 2){
+      stop(
+        "At least 2 groups are required for differential expression. ",
+        "Column '", group_by, "' contains only 1 unique value: '",
+        group_levels, "'."
+      )
+    }
+
+    # Build a sentinel label for the scran OvR out-group that is guaranteed
+    # not to collide with any existing group label.
+    .make_sentinel <- function(group_levels){
+      sentinel <- ".scDE_other"
+      while (sentinel %in% group_levels) sentinel <- paste0(sentinel, "_")
+      sentinel
+    }
+    sentinel_label <- .make_sentinel(group_levels)
+
     # Presto requires dgCMatrix or base matrix; anything else routes to scran
     .is_presto_compatible <- function(mat) inherits(mat, c("dgCMatrix", "matrix"))
 
@@ -442,7 +470,6 @@ run_dge.SingleCellExperiment <-
       )
     }
 
-    group_levels <- unique(groups)
     total_n      <- ncol(mat)
     group_counts <- table(groups)
 
@@ -486,8 +513,8 @@ run_dge.SingleCellExperiment <-
           # pair_idx is always row 1 (g vs. other), regardless of how scran
           # orders factor levels internally.
           binary_groups <- factor(
-            ifelse(groups == g, g, "other"),
-            levels = c(g, "other")
+            ifelse(groups == g, g, sentinel_label),
+            levels = c(g, sentinel_label)
           )
 
           pw <- scran::pairwiseWilcox(mat, groups = binary_groups)
