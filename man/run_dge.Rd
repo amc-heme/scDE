@@ -132,8 +132,11 @@ is computed from per-group means (log-space subtraction). Requires
 computed from group vs. all-other-cells means (same method as \code{"scran"}).
 Requires \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
 
-In all cases, \code{avgExpr} for scran paths is computed from the assay matrix
-via \code{Matrix::rowMeans()} (scran does not output mean expression).
+In all cases, \code{avgExpr} for scran paths is computed via
+\code{MatrixGenerics::rowMeans2()}, which supports both in-memory (\code{dgCMatrix},
+\code{matrix}) and \code{DelayedArray}-backed matrices (e.g. \code{HDF5Matrix},
+\code{SVT_SparseMatrix}). \code{other_mean} is derived algebraically from per-group
+means — no additional matrix reads per group.
 
 \item \code{run_dge(AnnDataR6)}: Anndata objects: uses Scanpy's rank_genes_groups
 function, with the "wilcoxon" method

@@ -40,6 +40,7 @@ CI pins Python 3.11 with a virtualenv named `"r-reticulate"`. Locally, set `RETI
 
 `run_dge` dispatches on object class:
 - `Seurat` → presto (`presto::wilcoxauc`) or BPCells (`BPCells::marker_features`) based on matrix class at runtime
+- `SingleCellExperiment` → presto (`presto::wilcoxauc`) for in-memory matrices, scran (`scran::pairwiseWilcox` or `scran::findMarkers`) for DelayedArray-backed matrices; backend controlled by `test_use` param
 - `AnnDataR6` → Python scanpy via reticulate
 - `default` → warning + NULL
 
@@ -62,8 +63,8 @@ Final sort: `group, pval_adj, desc(abs(log2FC))`.
   - Backend controlled by `test_use` param (also on the generic, ignored by other methods):
     - `NULL` (default): auto-detects — `"Presto"` for in-memory matrices, `"scran"` for DelayedArray-backed (e.g. HDF5Array).
     - `"Presto"`: `presto::wilcoxauc` on the extracted matrix directly (`.default` method). Output matches Seurat/presto schema: includes `auc`, `pct_in`, `pct_out`. Errors informatively if matrix is DelayedArray.
-    - `"scran"`: true one-vs-rest via `scran::pairwiseWilcox` + `scran::combineMarkers` per group. Returns `auc` column. LFC computed from group means (subtraction in log space, divided by log(2) to yield log2FC). `avgExpr` from `Matrix::rowMeans`.
-    - `"scran_pairwise"`: `scran::findMarkers(pval.type = "any")` pairwise approach. `log2FC` is `summary.logFC` from best pairwise comparison — not a true one-vs-rest mean. No `auc` column.
+    - `"scran"`: true one-vs-rest via `scran::pairwiseWilcox` per group; result indexed directly by pair position (avoids `combineMarkers`, which fails in scran ≥1.36). Binary factor with explicit levels `c(g, "other")` ensures `g` is always in `pairs$first`. Returns `auc` column. LFC computed from group means (subtraction in log space, divided by log(2) to yield log2FC). `avgExpr` via `MatrixGenerics::rowMeans2()` (supports DelayedArray); `other_mean` derived algebraically — no additional matrix reads.
+    - `"scran_pairwise"`: `scran::findMarkers(pval.type = "any")` pairwise approach. `log2FC` computed from group vs. all-other-cells means (same algebraic method as `"scran"`) — `findMarkers` wilcox output has no reliable summary LFC (scran bug, unfixed as of 1.40). No `auc` column.
 - Package uses `%>%` (magrittr), not base `|>`.
 
 ## CI

@@ -333,8 +333,11 @@ run_dge.Seurat <-
 #' computed from group vs. all-other-cells means (same method as `"scran"`).
 #' Requires `BiocManager::install(c("scran", "SummarizedExperiment"))`.
 #'
-#' In all cases, `avgExpr` for scran paths is computed from the assay matrix
-#' via `Matrix::rowMeans()` (scran does not output mean expression).
+#' In all cases, `avgExpr` for scran paths is computed via
+#' `MatrixGenerics::rowMeans2()`, which supports both in-memory (`dgCMatrix`,
+#' `matrix`) and `DelayedArray`-backed matrices (e.g. `HDF5Matrix`,
+#' `SVT_SparseMatrix`). `other_mean` is derived algebraically from per-group
+#' means — no additional matrix reads per group.
 #'
 #' @export
 run_dge.SingleCellExperiment <-
