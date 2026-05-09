@@ -10,12 +10,12 @@ function.
 
 ##### Functions Applied
 
-| Object Format                         | Package | Function                        |
-|---------------------------------------|---------|---------------------------------|
-| Seurat                                | presto  | \`presto::wilcoxauc\`           |
-| Seurat v5 (with BPCells Count Matrix) | BPCells | \`BPcells::marker_features\`    |
-| Anndata                               | scanpy  | \`scanpy.tl.rank_genes_groups\` |
-| SingleCellExperiment                  |         | Not yet supported               |
+| Object Format | Package | Function |
+|----|----|----|
+| Seurat | presto | \`presto::wilcoxauc\` |
+| Seurat v5 (with BPCells Count Matrix) | BPCells | \`BPcells::marker_features\` |
+| Anndata | scanpy | \`scanpy.tl.rank_genes_groups\` |
+| SingleCellExperiment |  | Not yet supported |
 
 This vignette will overview the process of differential gene expression,
 and will demonstrate usage `run_dge` function to perfrom common
@@ -59,6 +59,7 @@ values for condensed_cell_type in the object. The SCUBA package provides
 a shortcut for this operation.
 
 ``` r
+
 SCUBA::unique_values(AML_Seurat, "condensed_cell_type")
 ```
 
@@ -72,6 +73,7 @@ Next, simply call `run_dge` to perform differntial expression testing.
 Set group_by to “condensed_cell_tpe” to use this variable for grouping.
 
 ``` r
+
 table <- scDE::run_dge(
   AML_Seurat,
   group_by = "condensed_cell_type"
@@ -117,6 +119,7 @@ The table can be subsetted to view the best markers for each group.
 `dplyr` is used below, but base R subsetting can also be used.
 
 ``` r
+
 table |> 
   dplyr::filter(group == "Plasma cells")
 ```
@@ -140,6 +143,7 @@ Sorting in descending order by log-fold change or by AUC will show the
 top markers.
 
 ``` r
+
 table |> 
   dplyr::filter(group == "Plasma cells") |> 
   dplyr::arrange(desc(auc)) 
@@ -167,6 +171,7 @@ exact same syntax. In the example below, marker identification is
 performed on the same reference object in an anndata format.
 
 ``` r
+
 # Load reference object in anndata format
 AML_h5ad()
 ```
@@ -178,6 +183,7 @@ AML_h5ad()
     ##     layers: 'counts'
 
 ``` r
+
 # Perform the same marker analysis as above
 scDE::run_dge(
   AML_h5ad(),
@@ -231,6 +237,7 @@ differentially expressed between BM (bone marrow) monocytes and PBMC
 these two values, and then run differential expression.
 
 ``` r
+
 # Subset based on the condensed_cell_type variable for two cell types
 subsetted_object <-
   subset(
