@@ -372,9 +372,12 @@ run_dge.SingleCellExperiment <-
 
     groups <- as.character(groups)
 
+    # Presto requires dgCMatrix or base matrix; anything else routes to scran
+    .is_presto_compatible <- function(mat) inherits(mat, c("dgCMatrix", "matrix"))
+
     # Resolve test_use: auto-detect based on matrix class if not specified
     if (is.null(test_use)){
-      test_use <- if (!inherits(mat, "DelayedArray")) "Presto" else "scran"
+      test_use <- if (.is_presto_compatible(mat)) "Presto" else "scran"
     }
 
     # Normalize test_use casing (accept any case from user)
@@ -389,12 +392,12 @@ run_dge.SingleCellExperiment <-
       )
     )
 
-    # Presto cannot handle DelayedArray-backed matrices
-    if (test_use == "Presto" && inherits(mat, "DelayedArray")){
+    # Presto requires dgCMatrix or base matrix
+    if (test_use == "Presto" && !.is_presto_compatible(mat)){
       stop(
-        "Presto cannot handle DelayedArray-backed matrices (e.g. HDF5Array). ",
-        "Use test_use = 'scran' or test_use = 'scran_pairwise', or provide ",
-        "an in-memory assay layer."
+        "Presto requires an in-memory sparse matrix (dgCMatrix or matrix). ",
+        "The provided assay is class '", class(mat)[1], "'. ",
+        "Use test_use = 'scran' or test_use = 'scran_pairwise'."
       )
     }
 
