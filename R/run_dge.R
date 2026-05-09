@@ -377,6 +377,18 @@ run_dge.SingleCellExperiment <-
       test_use <- if (!inherits(mat, "DelayedArray")) "Presto" else "scran"
     }
 
+    # Normalize test_use casing (accept any case from user)
+    test_use <- switch(
+      tolower(test_use),
+      "presto"          = "Presto",
+      "scran"           = "scran",
+      "scran_pairwise"  = "scran_pairwise",
+      stop(
+        "'test_use' must be one of: \"Presto\", \"scran\", \"scran_pairwise\". ",
+        "Got: \"", test_use, "\""
+      )
+    )
+
     # Presto cannot handle DelayedArray-backed matrices
     if (test_use == "Presto" && inherits(mat, "DelayedArray")){
       stop(
