@@ -448,9 +448,11 @@ run_dge.SingleCellExperiment <-
 
     if (test_use == "scran"){
       # ---------------------------------------------------------------- #
-      # True one-vs-rest Wilcoxon via pairwiseWilcox + combineMarkers.   #
+      # True one-vs-rest Wilcoxon via pairwiseWilcox.                    #
       # One binary test per group (g vs. all others).                    #
-      # Returns auc column; LFC computed from group means.               #
+      # Directly index pw$statistics by pair position — avoids           #
+      # combineMarkers, which fails in scran >=1.36 due to unnamed       #
+      # statistics list. Returns auc column; LFC from group means.       #
       # ---------------------------------------------------------------- #
       dge_table <-
         lapply(group_levels, function(g){
@@ -459,15 +461,10 @@ run_dge.SingleCellExperiment <-
 
           pw <- scran::pairwiseWilcox(mat, groups = binary_groups)
 
-          cm <-
-            scran::combineMarkers(
-              de.lists  = pw$statistics,
-              pairs     = pw$pairs,
-              pval.type = "any"
-            )
-
-          df       <- as.data.frame(cm[[g]])
-          features <- rownames(cm[[g]])
+          # Pick the pair where first == g (g vs. other)
+          pair_idx <- which(pw$pairs$first == g)
+          stats_df <- as.data.frame(pw$statistics[[pair_idx]])
+          features <- rownames(pw$statistics[[pair_idx]])
 
           # LFC from log-space means: subtraction = log ratio;
           # divide by log(2) to convert ln-ratio -> log2FC
@@ -481,10 +478,10 @@ run_dge.SingleCellExperiment <-
             group    = g,
             feature  = features,
             avgExpr  = avg_expr_list[[g]][features],
-            auc      = df[["summary.AUC"]],
+            auc      = stats_df[["AUC"]],
             log2FC   = log2fc_vals,
-            pval     = df[["p.value"]],
-            pval_adj = df[["FDR"]]
+            pval     = stats_df[["p.value"]],
+            pval_adj = stats_df[["FDR"]]
           )
         }) %>%
         dplyr::bind_rows()
