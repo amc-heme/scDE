@@ -489,8 +489,10 @@ run_dge.SingleCellExperiment <-
     } else if (test_use == "scran_pairwise"){
       # ---------------------------------------------------------------- #
       # scran::findMarkers with pairwise combinations.                   #
-      # summary.logFC is from the best pairwise comparison (not one-vs-  #
-      # rest). No auc column.                                            #
+      # p-values/ranking from all pairwise comparisons (pval.type="any"). #
+      # No auc column. log2FC computed from group vs. all-other means    #
+      # (same as "scran" path) — findMarkers wilcox output does not      #
+      # include a reliable summary LFC (scran bug, unfixed as of 1.40).  #
       # ---------------------------------------------------------------- #
       markers <-
         scran::findMarkers(
@@ -506,11 +508,17 @@ run_dge.SingleCellExperiment <-
           df       <- as.data.frame(markers[[g]])
           features <- rownames(markers[[g]])
 
+          other_mean <-
+            Matrix::rowMeans(mat[, groups != g, drop = FALSE])
+
+          log2fc_vals <-
+            (avg_expr_list[[g]][features] - other_mean[features]) / log(2)
+
           tibble::tibble(
             group    = g,
             feature  = features,
             avgExpr  = avg_expr_list[[g]][features],
-            log2FC   = df[["summary.logFC"]],
+            log2FC   = log2fc_vals,
             pval     = df[["p.value"]],
             pval_adj = df[["FDR"]]
           )
