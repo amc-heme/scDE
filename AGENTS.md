@@ -59,9 +59,11 @@ Final sort: `group, pval_adj, desc(abs(log2FC))`.
 - `slot` param deprecated in 0.2.0, replaced by `layer`. Removal at 1.0.0.
 - `SingleCellExperiment` method uses scran for Wilcoxon testing. Requires Bioconductor: `BiocManager::install(c("scran", "SummarizedExperiment"))` — listed in `Suggests`, so not auto-installed. Guards use `requireNamespace()` with actionable error messages.
   - Default layer: `"logcounts"`.
-  - `avgExpr` is computed from the assay matrix via `Matrix::rowMeans()` (scran does not output mean expression).
-  - Default (`scran_style = FALSE`): true one-vs-rest via `scran::pairwiseWilcox` + `scran::combineMarkers` per group. Returns `auc` column (like presto). LFC computed from group means (subtraction in log space, divided by log(2) to yield log2FC).
-  - `scran_style = TRUE`: `scran::findMarkers(pval.type = "any")` pairwise approach. `log2FC` is `summary.logFC` from best pairwise comparison — not a true one-vs-rest mean. No `auc` column.
+  - Backend controlled by `test_use` param (also on the generic, ignored by other methods):
+    - `NULL` (default): auto-detects — `"Presto"` for in-memory matrices, `"scran"` for DelayedArray-backed (e.g. HDF5Array).
+    - `"Presto"`: `presto::wilcoxauc` on the extracted matrix directly (`.default` method). Output matches Seurat/presto schema: includes `auc`, `pct_in`, `pct_out`. Errors informatively if matrix is DelayedArray.
+    - `"scran"`: true one-vs-rest via `scran::pairwiseWilcox` + `scran::combineMarkers` per group. Returns `auc` column. LFC computed from group means (subtraction in log space, divided by log(2) to yield log2FC). `avgExpr` from `Matrix::rowMeans`.
+    - `"scran_pairwise"`: `scran::findMarkers(pval.type = "any")` pairwise approach. `log2FC` is `summary.logFC` from best pairwise comparison — not a true one-vs-rest mean. No `auc` column.
 - Package uses `%>%` (magrittr), not base `|>`.
 
 ## CI

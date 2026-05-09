@@ -29,12 +29,16 @@
 #' group compared to the reference (LFC > 0). Defaults to FALSE.
 #' @param remove_raw_pval If TRUE, show only the adjusted p-value.
 #' Defaults to FALSE.
-#' @param scran_style For SingleCellExperiment objects only. If FALSE
-#' (default), a true one-vs-rest Wilcoxon test is run for each group using
-#' `scran::pairwiseWilcox`, producing results comparable to presto, BPCells,
-#' and scanpy (includes an `auc` column). If TRUE, uses
-#' `scran::findMarkers` with pairwise comparisons combined across all groups
-#' (`pval.type = "any"`); no `auc` column is returned.
+#' @param test_use For SingleCellExperiment objects only. Controls which
+#' backend is used. `NULL` (default) auto-detects: `"Presto"` for in-memory
+#' matrices, `"scran"` for DelayedArray-backed matrices (e.g. HDF5-backed).
+#' `"Presto"` forces presto via `presto::wilcoxauc` — errors if the matrix is
+#' DelayedArray-backed. `"scran"` forces a true one-vs-rest Wilcoxon test per
+#' group via `scran::pairwiseWilcox` + `scran::combineMarkers` (returns an
+#' `auc` column). `"scran_pairwise"` uses `scran::findMarkers` with pairwise
+#' comparisons combined across all groups (`pval.type = "any"`); no `auc`
+#' column is returned and `log2FC` reflects the best pairwise comparison rather
+#' than a true one-vs-rest mean.
 #'
 #' @rdname run_dge
 #'
@@ -52,7 +56,7 @@ run_dge <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
-    scran_style = FALSE,
+    test_use = NULL,
     slot = lifecycle::deprecated(),
     ...
   ){
@@ -89,6 +93,7 @@ run_dge.default <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    test_use = NULL,
     slot = lifecycle::deprecated()
   ){
     warning(
@@ -112,6 +117,7 @@ run_dge.Seurat <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    test_use = NULL,
     slot = lifecycle::deprecated()
   ){
     # Define layer to use. If not specified by the user, use the
@@ -305,22 +311,28 @@ run_dge.Seurat <-
     dge_table
   }
 
-#' @describeIn run_dge SingleCellExperiment objects: uses scran for Wilcoxon
-#' testing. Requires Bioconductor packages `scran` and `SummarizedExperiment` —
-#' install with `BiocManager::install(c("scran", "SummarizedExperiment"))`.
+#' @describeIn run_dge SingleCellExperiment objects: uses Presto by default for
+#' in-memory matrices, with automatic fallback to scran for DelayedArray-backed
+#' matrices (e.g. HDF5-backed via `HDF5Array`). The backend can be controlled
+#' explicitly via `test_use`.
 #'
-#' By default (`scran_style = FALSE`), a true one-vs-rest Wilcoxon test is run
-#' for each group via `scran::pairwiseWilcox` + `scran::combineMarkers`,
-#' matching the behavior of presto, BPCells, and scanpy. Output includes an
-#' `auc` column.
+#' **Presto** (`test_use = "Presto"` or auto for in-memory): calls
+#' `presto::wilcoxauc` directly on the extracted assay matrix. Output schema
+#' matches the Seurat/Presto path and includes `auc`, `pct_in`, and `pct_out`.
 #'
-#' When `scran_style = TRUE`, `scran::findMarkers` is used with pairwise
-#' comparisons combined across all groups (`pval.type = "any"`). `log2FC` is
-#' `summary.logFC` from the best pairwise comparison (not a true one-vs-rest
-#' mean). No `auc` column is returned.
+#' **scran one-vs-rest** (`test_use = "scran"` or auto for DelayedArray): runs
+#' a true one-vs-rest Wilcoxon test per group via `scran::pairwiseWilcox` +
+#' `scran::combineMarkers`. Returns an `auc` column. LFC is computed from
+#' per-group means (log-space subtraction). Requires
+#' `BiocManager::install(c("scran", "SummarizedExperiment"))`.
 #'
-#' In both cases, `avgExpr` is computed from the assay matrix via
-#' `Matrix::rowMeans()` (scran does not output mean expression).
+#' **scran pairwise** (`test_use = "scran_pairwise"`): uses
+#' `scran::findMarkers(pval.type = "any")`. No `auc` column. `log2FC` reflects
+#' `summary.logFC` from the best pairwise comparison, not a true one-vs-rest
+#' mean. Requires `BiocManager::install(c("scran", "SummarizedExperiment"))`.
+#'
+#' In all cases, `avgExpr` for scran paths is computed from the assay matrix
+#' via `Matrix::rowMeans()` (scran does not output mean expression).
 #'
 #' @export
 run_dge.SingleCellExperiment <-
@@ -332,16 +344,10 @@ run_dge.SingleCellExperiment <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
-    scran_style = FALSE,
+    test_use = NULL,
     slot = lifecycle::deprecated()
   ){
-    # Guard: required Bioconductor packages
-    if (!requireNamespace("scran", quietly = TRUE)){
-      stop(
-        "Package 'scran' is required for SingleCellExperiment objects. ",
-        "Install with: BiocManager::install('scran')"
-      )
-    }
+    # SummarizedExperiment is always needed for matrix/colData extraction
     if (!requireNamespace("SummarizedExperiment", quietly = TRUE)){
       stop(
         "Package 'SummarizedExperiment' is required for SingleCellExperiment ",
@@ -364,46 +370,94 @@ run_dge.SingleCellExperiment <-
       )
     }
 
-    groups        <- as.character(groups)
-    group_levels  <- unique(groups)
+    groups <- as.character(groups)
 
-    # Compute per-group average expression (used in both branches)
+    # Resolve test_use: auto-detect based on matrix class if not specified
+    if (is.null(test_use)){
+      test_use <- if (!inherits(mat, "DelayedArray")) "Presto" else "scran"
+    }
+
+    # Presto cannot handle DelayedArray-backed matrices
+    if (test_use == "Presto" && inherits(mat, "DelayedArray")){
+      stop(
+        "Presto cannot handle DelayedArray-backed matrices (e.g. HDF5Array). ",
+        "Use test_use = 'scran' or test_use = 'scran_pairwise', or provide ",
+        "an in-memory assay layer."
+      )
+    }
+
+    # ------------------------------------------------------------------ #
+    # Presto path                                                         #
+    # ------------------------------------------------------------------ #
+    if (test_use == "Presto"){
+      dge_table <-
+        presto::wilcoxauc(mat, y = groups) %>%
+        tibble::as_tibble() %>%
+        dplyr::select(-statistic) %>%
+        {if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .} %>%
+        {if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .} %>%
+        dplyr::arrange(group, padj, desc(abs(logFC)))
+
+      # Convert to log2FC format if desired by user
+      if (lfc_format == "log2"){
+        dge_table$logFC <- scDE:::ln_to_log2(dge_table$logFC)
+        dge_table <- dge_table %>% dplyr::rename(log2FC = logFC)
+      }
+
+      dge_table <-
+        dge_table %>%
+        dplyr::rename(pval_adj = padj) %>%
+        dplyr::relocate(group, .before = feature)
+
+      return(dge_table)
+    }
+
+    # ------------------------------------------------------------------ #
+    # scran paths: guard + shared setup                                   #
+    # ------------------------------------------------------------------ #
+    if (!requireNamespace("scran", quietly = TRUE)){
+      stop(
+        "Package 'scran' is required when test_use is '", test_use, "'. ",
+        "Install with: BiocManager::install('scran')"
+      )
+    }
+
+    group_levels <- unique(groups)
+
+    # Per-group average expression (scran does not output this)
     avg_expr_list <-
       lapply(group_levels, function(g){
         Matrix::rowMeans(mat[, groups == g, drop = FALSE])
       })
     names(avg_expr_list) <- group_levels
 
-    if (!scran_style){
-      # ------------------------------------------------------------------ #
-      # Default: true one-vs-rest Wilcoxon via pairwiseWilcox +            #
-      # combineMarkers. One binary test per group (g vs. all others).      #
-      # Returns auc column; LFC computed from group means.                 #
-      # ------------------------------------------------------------------ #
+    if (test_use == "scran"){
+      # ---------------------------------------------------------------- #
+      # True one-vs-rest Wilcoxon via pairwiseWilcox + combineMarkers.   #
+      # One binary test per group (g vs. all others).                    #
+      # Returns auc column; LFC computed from group means.               #
+      # ---------------------------------------------------------------- #
       dge_table <-
         lapply(group_levels, function(g){
-          # Build binary group factor for this group vs. all others
+          # Binary factor: current group vs. all others
           binary_groups <- ifelse(groups == g, g, "other")
 
-          # Pairwise Wilcoxon on the binary factor
           pw <- scran::pairwiseWilcox(mat, groups = binary_groups)
 
-          # combineMarkers on the single pair (g vs. other)
           cm <-
             scran::combineMarkers(
-              de.lists = pw$statistics,
-              pairs    = pw$pairs,
+              de.lists  = pw$statistics,
+              pairs     = pw$pairs,
               pval.type = "any"
             )
 
-          df <- as.data.frame(cm[[g]])
-
-          # Compute LFC from log-space means (subtraction = log ratio)
-          # Divide by log(2) to convert ln-ratio -> log2FC
-          other_mean <- Matrix::rowMeans(
-            mat[, groups != g, drop = FALSE]
-          )
+          df       <- as.data.frame(cm[[g]])
           features <- rownames(cm[[g]])
+
+          # LFC from log-space means: subtraction = log ratio;
+          # divide by log(2) to convert ln-ratio -> log2FC
+          other_mean <-
+            Matrix::rowMeans(mat[, groups != g, drop = FALSE])
 
           log2fc_vals <-
             (avg_expr_list[[g]][features] - other_mean[features]) / log(2)
@@ -420,17 +474,17 @@ run_dge.SingleCellExperiment <-
         }) %>%
         dplyr::bind_rows()
 
-    } else {
-      # ------------------------------------------------------------------ #
-      # scran_style = TRUE: findMarkers with pairwise combinations.        #
-      # summary.logFC is from the best pairwise comparison (not one-vs-    #
-      # rest). No auc column.                                              #
-      # ------------------------------------------------------------------ #
+    } else if (test_use == "scran_pairwise"){
+      # ---------------------------------------------------------------- #
+      # scran::findMarkers with pairwise combinations.                   #
+      # summary.logFC is from the best pairwise comparison (not one-vs-  #
+      # rest). No auc column.                                            #
+      # ---------------------------------------------------------------- #
       markers <-
         scran::findMarkers(
           mat,
-          groups    = groups,
-          test.type = "wilcox",
+          groups     = groups,
+          test.type  = "wilcox",
           full.stats = TRUE,
           pval.type  = "any"
         )
@@ -450,7 +504,17 @@ run_dge.SingleCellExperiment <-
           )
         }) %>%
         dplyr::bind_rows()
+
+    } else {
+      stop(
+        "Unknown test_use value '", test_use, "' for SingleCellExperiment. ",
+        "Must be one of: NULL (auto), 'Presto', 'scran', 'scran_pairwise'."
+      )
     }
+
+    # ------------------------------------------------------------------ #
+    # Shared post-processing for scran paths                              #
+    # ------------------------------------------------------------------ #
 
     # Handle lfc_format: convert log2FC -> ln if requested
     if (lfc_format == "ln"){
@@ -464,7 +528,6 @@ run_dge.SingleCellExperiment <-
       lfc_col <- "log2FC"
     }
 
-    # Apply filters and sort (consistent with all other methods)
     dge_table %>%
       {if (positive_only) dplyr::filter(., .data[[lfc_col]] > 0) else .} %>%
       {if (remove_raw_pval) dplyr::select(., -pval) else .} %>%
@@ -484,6 +547,7 @@ run_dge.AnnDataR6 <-
     lfc_format = "log2",
     positive_only = FALSE,
     remove_raw_pval = FALSE,
+    test_use = NULL,
     slot = lifecycle::deprecated()
   ){
     if (!requireNamespace("reticulate", quietly = TRUE)){
@@ -534,4 +598,3 @@ run_dge.AnnDataR6 <-
       # Sort by group, then by adjusted p-value, then by descending LFC
       dplyr::arrange(group, pval_adj, desc(abs(log2FC)))
   }
-

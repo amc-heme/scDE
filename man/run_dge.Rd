@@ -15,7 +15,7 @@ run_dge(
   lfc_format = "log2",
   positive_only = FALSE,
   remove_raw_pval = FALSE,
-  scran_style = FALSE,
+  test_use = NULL,
   slot = lifecycle::deprecated(),
   ...
 )
@@ -28,6 +28,7 @@ run_dge(
   lfc_format = "log2",
   positive_only = FALSE,
   remove_raw_pval = FALSE,
+  test_use = NULL,
   slot = lifecycle::deprecated()
 )
 
@@ -39,7 +40,7 @@ run_dge(
   lfc_format = "log2",
   positive_only = FALSE,
   remove_raw_pval = FALSE,
-  scran_style = FALSE,
+  test_use = NULL,
   slot = lifecycle::deprecated()
 )
 
@@ -51,6 +52,7 @@ run_dge(
   lfc_format = "log2",
   positive_only = FALSE,
   remove_raw_pval = FALSE,
+  test_use = NULL,
   slot = lifecycle::deprecated()
 )
 }
@@ -86,12 +88,16 @@ group compared to the reference (LFC > 0). Defaults to FALSE.}
 \item{remove_raw_pval}{If TRUE, show only the adjusted p-value.
 Defaults to FALSE.}
 
-\item{scran_style}{For SingleCellExperiment objects only. If FALSE
-(default), a true one-vs-rest Wilcoxon test is run for each group using
-\code{scran::pairwiseWilcox}, producing results comparable to presto, BPCells,
-and scanpy (includes an \code{auc} column). If TRUE, uses
-\code{scran::findMarkers} with pairwise comparisons combined across all groups
-(\code{pval.type = "any"}); no \code{auc} column is returned.}
+\item{test_use}{For SingleCellExperiment objects only. Controls which
+backend is used. \code{NULL} (default) auto-detects: \code{"Presto"} for in-memory
+matrices, \code{"scran"} for DelayedArray-backed matrices (e.g. HDF5-backed).
+\code{"Presto"} forces presto via \code{presto::wilcoxauc} — errors if the matrix is
+DelayedArray-backed. \code{"scran"} forces a true one-vs-rest Wilcoxon test per
+group via \code{scran::pairwiseWilcox} + \code{scran::combineMarkers} (returns an
+\code{auc} column). \code{"scran_pairwise"} uses \code{scran::findMarkers} with pairwise
+comparisons combined across all groups (\code{pval.type = "any"}); no \code{auc}
+column is returned and \code{log2FC} reflects the best pairwise comparison rather
+than a true one-vs-rest mean.}
 
 \item{slot}{No longer used. Please use \code{layer} instead.}
 }
@@ -104,22 +110,28 @@ on the test used.
 \itemize{
 \item \code{run_dge(Seurat)}: Seurat objects: uses Presto
 
-\item \code{run_dge(SingleCellExperiment)}: SingleCellExperiment objects: uses scran for Wilcoxon
-testing. Requires Bioconductor packages \code{scran} and \code{SummarizedExperiment} —
-install with \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
+\item \code{run_dge(SingleCellExperiment)}: SingleCellExperiment objects: uses Presto by default for
+in-memory matrices, with automatic fallback to scran for DelayedArray-backed
+matrices (e.g. HDF5-backed via \code{HDF5Array}). The backend can be controlled
+explicitly via \code{test_use}.
 
-By default (\code{scran_style = FALSE}), a true one-vs-rest Wilcoxon test is run
-for each group via \code{scran::pairwiseWilcox} + \code{scran::combineMarkers},
-matching the behavior of presto, BPCells, and scanpy. Output includes an
-\code{auc} column.
+\strong{Presto} (\code{test_use = "Presto"} or auto for in-memory): calls
+\code{presto::wilcoxauc} directly on the extracted assay matrix. Output schema
+matches the Seurat/Presto path and includes \code{auc}, \code{pct_in}, and \code{pct_out}.
 
-When \code{scran_style = TRUE}, \code{scran::findMarkers} is used with pairwise
-comparisons combined across all groups (\code{pval.type = "any"}). \code{log2FC} is
-\code{summary.logFC} from the best pairwise comparison (not a true one-vs-rest
-mean). No \code{auc} column is returned.
+\strong{scran one-vs-rest} (\code{test_use = "scran"} or auto for DelayedArray): runs
+a true one-vs-rest Wilcoxon test per group via \code{scran::pairwiseWilcox} +
+\code{scran::combineMarkers}. Returns an \code{auc} column. LFC is computed from
+per-group means (log-space subtraction). Requires
+\code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
 
-In both cases, \code{avgExpr} is computed from the assay matrix via
-\code{Matrix::rowMeans()} (scran does not output mean expression).
+\strong{scran pairwise} (\code{test_use = "scran_pairwise"}): uses
+\code{scran::findMarkers(pval.type = "any")}. No \code{auc} column. \code{log2FC} reflects
+\code{summary.logFC} from the best pairwise comparison, not a true one-vs-rest
+mean. Requires \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
+
+In all cases, \code{avgExpr} for scran paths is computed from the assay matrix
+via \code{Matrix::rowMeans()} (scran does not output mean expression).
 
 \item \code{run_dge(AnnDataR6)}: Anndata objects: uses Scanpy's rank_genes_groups
 function, with the "wilcoxon" method
