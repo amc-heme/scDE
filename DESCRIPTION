@@ -19,6 +19,7 @@ Imports:
   rlang,
   magrittr,
   Matrix,
+  MatrixGenerics,
   bslib,
   SCUBA,
   lifecycle

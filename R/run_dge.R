@@ -440,13 +440,33 @@ run_dge.SingleCellExperiment <-
     }
 
     group_levels <- unique(groups)
+    total_n      <- ncol(mat)
+    group_counts <- table(groups)
 
-    # Per-group average expression (scran does not output this)
-    avg_expr_list <-
+    # Compute per-group mean expression once using MatrixGenerics::rowMeans2,
+    # which supports DelayedArray/HDF5-backed matrices. This avoids re-reading
+    # the matrix once per group for other_mean: instead, other_mean is derived
+    # algebraically as (total_sum - group_sum) / (total_n - n_g), which is pure
+    # arithmetic after this single pass of N group reads.
+    group_means <-
       lapply(group_levels, function(g){
-        Matrix::rowMeans(mat[, groups == g, drop = FALSE])
+        MatrixGenerics::rowMeans2(mat[, groups == g, drop = FALSE])
       })
-    names(avg_expr_list) <- group_levels
+    names(group_means) <- group_levels
+
+    # Precompute total sum (weighted sum of group means) for other_mean derivation
+    total_sum <- Reduce(`+`, mapply(
+      function(m, n) m * n,
+      group_means,
+      as.integer(group_counts[group_levels]),
+      SIMPLIFY = FALSE
+    ))
+
+    # Returns other_mean for group g without any matrix reads
+    .other_mean <- function(g){
+      n_g <- as.integer(group_counts[[g]])
+      (total_sum - group_means[[g]] * n_g) / (total_n - n_g)
+    }
 
     if (test_use == "scran"){
       # ---------------------------------------------------------------- #
@@ -458,28 +478,32 @@ run_dge.SingleCellExperiment <-
       # ---------------------------------------------------------------- #
       dge_table <-
         lapply(group_levels, function(g){
-          # Binary factor: current group vs. all others
-          binary_groups <- ifelse(groups == g, g, "other")
+          # Binary factor with explicit level order: g first, "other" second.
+          # This guarantees pairwiseWilcox places g in pairs$first so
+          # pair_idx is always row 1 (g vs. other), regardless of how scran
+          # orders factor levels internally.
+          binary_groups <- factor(
+            ifelse(groups == g, g, "other"),
+            levels = c(g, "other")
+          )
 
           pw <- scran::pairwiseWilcox(mat, groups = binary_groups)
 
-          # Pick the pair where first == g (g vs. other)
+          # pairs$first == g is now guaranteed to be row 1
           pair_idx <- which(pw$pairs$first == g)
           stats_df <- as.data.frame(pw$statistics[[pair_idx]])
           features <- rownames(pw$statistics[[pair_idx]])
 
           # LFC from log-space means: subtraction = log ratio;
-          # divide by log(2) to convert ln-ratio -> log2FC
-          other_mean <-
-            Matrix::rowMeans(mat[, groups != g, drop = FALSE])
-
+          # divide by log(2) to convert ln-ratio -> log2FC.
+          # other_mean derived algebraically — no additional matrix reads.
           log2fc_vals <-
-            (avg_expr_list[[g]][features] - other_mean[features]) / log(2)
+            (group_means[[g]][features] - .other_mean(g)[features]) / log(2)
 
           tibble::tibble(
             group    = g,
             feature  = features,
-            avgExpr  = avg_expr_list[[g]][features],
+            avgExpr  = group_means[[g]][features],
             auc      = stats_df[["AUC"]],
             log2FC   = log2fc_vals,
             pval     = stats_df[["p.value"]],
@@ -510,16 +534,14 @@ run_dge.SingleCellExperiment <-
           df       <- as.data.frame(markers[[g]])
           features <- rownames(markers[[g]])
 
-          other_mean <-
-            Matrix::rowMeans(mat[, groups != g, drop = FALSE])
-
-          log2fc_vals <-
-            (avg_expr_list[[g]][features] - other_mean[features]) / log(2)
+          other_mean   <- .other_mean(g)
+          log2fc_vals  <-
+            (group_means[[g]][features] - other_mean[features]) / log(2)
 
           tibble::tibble(
             group    = g,
             feature  = features,
-            avgExpr  = avg_expr_list[[g]][features],
+            avgExpr  = group_means[[g]][features],
             log2FC   = log2fc_vals,
             pval     = df[["p.value"]],
             pval_adj = df[["FDR"]]
