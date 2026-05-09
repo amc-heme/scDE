@@ -1,6 +1,6 @@
 # AGENTS.md
 
-R package: `scDE` v0.2.0.9000. Single-package repo (no monorepo). Unified DGE for Seurat and AnnData single-cell objects.
+R package: `scDE` v0.2.0.9000. Single-package repo (no monorepo). Unified DGE for Seurat, SingleCellExperiment, and AnnData single-cell objects.
 
 ## Developer commands
 
