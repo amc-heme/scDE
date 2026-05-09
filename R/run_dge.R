@@ -614,9 +614,9 @@ run_dge.SingleCellExperiment <-
     }
 
     dge_table %>%
-      {if (positive_only) dplyr::filter(., .data[[lfc_col]] > 0) else .} %>%
+      {if (positive_only) dplyr::filter(., rlang::.data[[lfc_col]] > 0) else .} %>%
       {if (remove_raw_pval) dplyr::select(., -pval) else .} %>%
-      dplyr::arrange(group, pval_adj, dplyr::desc(abs(.data[[lfc_col]])))
+      dplyr::arrange(group, pval_adj, dplyr::desc(abs(rlang::.data[[lfc_col]])))
   }
 
 #' @describeIn run_dge Anndata objects: uses Scanpy's rank_genes_groups
