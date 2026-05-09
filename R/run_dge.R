@@ -538,9 +538,19 @@ run_dge.SingleCellExperiment <-
           df       <- as.data.frame(markers[[g]])
           features <- rownames(markers[[g]])
 
-          other_mean   <- .other_mean(g)
-          log2fc_vals  <-
-            (group_means[[g]][features] - other_mean[features]) / log(2)
+          other_mean      <- .other_mean(g)
+          lfc_layer_scale <-
+            group_means[[g]][features] - other_mean[features]
+          log2fc_vals     <-
+            if (
+              is.null(layer) ||
+              identical(layer, "logcounts") ||
+              grepl("log2", layer, ignore.case = TRUE)
+            ) {
+              lfc_layer_scale
+            } else {
+              lfc_layer_scale / log(2)
+            }
 
           tibble::tibble(
             group    = g,
