@@ -165,6 +165,15 @@ run_dge.Seurat <-
           return_class = "vector"
           )
 
+      # Drop unused factor levels. BPCells::marker_features() coerces the
+      # group vector with as.factor() and sizes its result tibble from
+      # levels(groups), but the underlying Wilcoxon test only emits stats
+      # for populated groups. Unused levels make the sizes diverge and
+      # tibble::tibble() errors with "columns must have compatible sizes".
+      if (is.factor(groups)) {
+        groups <- droplevels(groups)
+      }
+
       # Run BPCells marker_features
       dge_table <-
         BPCells::marker_features(
