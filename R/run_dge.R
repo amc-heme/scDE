@@ -497,11 +497,12 @@ run_dge.SingleCellExperiment <-
           stats_df <- as.data.frame(pw$statistics[[pair_idx]])
           features <- rownames(pw$statistics[[pair_idx]])
 
-          # LFC from log-space means: subtraction = log ratio;
-          # divide by log(2) to convert ln-ratio -> log2FC.
+          # LFC from log-space means: subtraction = log ratio.
+          # For Bioconductor-style logcounts, the means are already on the
+          # log2 scale, so their difference is the log2 fold-change directly.
           # other_mean derived algebraically — no additional matrix reads.
           log2fc_vals <-
-            (group_means[[g]][features] - .other_mean(g)[features]) / log(2)
+            group_means[[g]][features] - .other_mean(g)[features]
 
           tibble::tibble(
             group    = g,
