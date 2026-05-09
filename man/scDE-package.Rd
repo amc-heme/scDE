@@ -6,7 +6,7 @@
 \alias{scDE-package}
 \title{scDE: Unified Single Cell Differential Expression}
 \description{
-Tools for performing differential expression analysis in single cell objects and returning common results. scDE currently accepts Seurat and Anndata objects.
+Tools for performing differential expression analysis in single cell objects and returning common results. scDE currently accepts Seurat, SingleCellExperiment, and AnnData objects.
 }
 \author{
 \strong{Maintainer}: William Showers \email{bill.showers@refinedscience.com}

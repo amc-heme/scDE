@@ -10,8 +10,8 @@ Authors@R:
     )
 Description:
     Tools for performing differential expression analysis in single cell objects
-    and returning common results. scDE currently accepts Seurat and Anndata 
-    objects.
+    and returning common results. scDE currently accepts Seurat,
+    SingleCellExperiment, and AnnData objects.
 Imports:
   presto,
   tibble,

@@ -90,14 +90,15 @@ Defaults to FALSE.}
 
 \item{test_use}{For SingleCellExperiment objects only. Controls which
 backend is used. \code{NULL} (default) auto-detects: \code{"Presto"} for in-memory
-matrices, \code{"scran"} for DelayedArray-backed matrices (e.g. HDF5-backed).
+matrices (\code{dgCMatrix} or \code{matrix}), \code{"scran"} for all other matrix classes
+(e.g. HDF5-backed \code{DelayedMatrix}, \code{SVT_SparseMatrix}).
 \code{"Presto"} forces presto via \code{presto::wilcoxauc} — errors if the matrix is
-DelayedArray-backed. \code{"scran"} forces a true one-vs-rest Wilcoxon test per
-group via \code{scran::pairwiseWilcox} + \code{scran::combineMarkers} (returns an
-\code{auc} column). \code{"scran_pairwise"} uses \code{scran::findMarkers} with pairwise
-comparisons combined across all groups (\code{pval.type = "any"}); no \code{auc}
-column is returned and \code{log2FC} reflects the best pairwise comparison rather
-than a true one-vs-rest mean.}
+not \code{dgCMatrix} or \code{matrix}. \code{"scran"} forces a true one-vs-rest Wilcoxon
+test per group via \code{scran::pairwiseWilcox}, indexing the result directly
+(returns an \code{auc} column; LFC from group means). \code{"scran_pairwise"} uses
+\code{scran::findMarkers} with pairwise comparisons combined across all groups
+(\code{pval.type = "any"}); no \code{auc} column is returned and \code{log2FC} is computed
+from group vs. all-other-cells means (same method as \code{"scran"}).}
 
 \item{slot}{No longer used. Please use \code{layer} instead.}
 }
@@ -119,16 +120,17 @@ explicitly via \code{test_use}.
 \code{presto::wilcoxauc} directly on the extracted assay matrix. Output schema
 matches the Seurat/Presto path and includes \code{auc}, \code{pct_in}, and \code{pct_out}.
 
-\strong{scran one-vs-rest} (\code{test_use = "scran"} or auto for DelayedArray): runs
-a true one-vs-rest Wilcoxon test per group via \code{scran::pairwiseWilcox} +
-\code{scran::combineMarkers}. Returns an \code{auc} column. LFC is computed from
-per-group means (log-space subtraction). Requires
+\strong{scran one-vs-rest} (\code{test_use = "scran"} or auto for non-presto-compatible
+matrices): runs a true one-vs-rest Wilcoxon test per group via
+\code{scran::pairwiseWilcox} on a binary factor (group vs. all others), then
+indexes the result directly by pair position. Returns an \code{auc} column. LFC
+is computed from per-group means (log-space subtraction). Requires
 \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
 
 \strong{scran pairwise} (\code{test_use = "scran_pairwise"}): uses
-\code{scran::findMarkers(pval.type = "any")}. No \code{auc} column. \code{log2FC} reflects
-\code{summary.logFC} from the best pairwise comparison, not a true one-vs-rest
-mean. Requires \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
+\code{scran::findMarkers(pval.type = "any")}. No \code{auc} column. \code{log2FC} is
+computed from group vs. all-other-cells means (same method as \code{"scran"}).
+Requires \code{BiocManager::install(c("scran", "SummarizedExperiment"))}.
 
 In all cases, \code{avgExpr} for scran paths is computed from the assay matrix
 via \code{Matrix::rowMeans()} (scran does not output mean expression).

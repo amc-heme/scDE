@@ -31,14 +31,15 @@
 #' Defaults to FALSE.
 #' @param test_use For SingleCellExperiment objects only. Controls which
 #' backend is used. `NULL` (default) auto-detects: `"Presto"` for in-memory
-#' matrices, `"scran"` for DelayedArray-backed matrices (e.g. HDF5-backed).
+#' matrices (`dgCMatrix` or `matrix`), `"scran"` for all other matrix classes
+#' (e.g. HDF5-backed `DelayedMatrix`, `SVT_SparseMatrix`).
 #' `"Presto"` forces presto via `presto::wilcoxauc` — errors if the matrix is
-#' DelayedArray-backed. `"scran"` forces a true one-vs-rest Wilcoxon test per
-#' group via `scran::pairwiseWilcox` + `scran::combineMarkers` (returns an
-#' `auc` column). `"scran_pairwise"` uses `scran::findMarkers` with pairwise
-#' comparisons combined across all groups (`pval.type = "any"`); no `auc`
-#' column is returned and `log2FC` reflects the best pairwise comparison rather
-#' than a true one-vs-rest mean.
+#' not `dgCMatrix` or `matrix`. `"scran"` forces a true one-vs-rest Wilcoxon
+#' test per group via `scran::pairwiseWilcox`, indexing the result directly
+#' (returns an `auc` column; LFC from group means). `"scran_pairwise"` uses
+#' `scran::findMarkers` with pairwise comparisons combined across all groups
+#' (`pval.type = "any"`); no `auc` column is returned and `log2FC` is computed
+#' from group vs. all-other-cells means (same method as `"scran"`).
 #'
 #' @rdname run_dge
 #'
@@ -320,16 +321,17 @@ run_dge.Seurat <-
 #' `presto::wilcoxauc` directly on the extracted assay matrix. Output schema
 #' matches the Seurat/Presto path and includes `auc`, `pct_in`, and `pct_out`.
 #'
-#' **scran one-vs-rest** (`test_use = "scran"` or auto for DelayedArray): runs
-#' a true one-vs-rest Wilcoxon test per group via `scran::pairwiseWilcox` +
-#' `scran::combineMarkers`. Returns an `auc` column. LFC is computed from
-#' per-group means (log-space subtraction). Requires
+#' **scran one-vs-rest** (`test_use = "scran"` or auto for non-presto-compatible
+#' matrices): runs a true one-vs-rest Wilcoxon test per group via
+#' `scran::pairwiseWilcox` on a binary factor (group vs. all others), then
+#' indexes the result directly by pair position. Returns an `auc` column. LFC
+#' is computed from per-group means (log-space subtraction). Requires
 #' `BiocManager::install(c("scran", "SummarizedExperiment"))`.
 #'
 #' **scran pairwise** (`test_use = "scran_pairwise"`): uses
-#' `scran::findMarkers(pval.type = "any")`. No `auc` column. `log2FC` reflects
-#' `summary.logFC` from the best pairwise comparison, not a true one-vs-rest
-#' mean. Requires `BiocManager::install(c("scran", "SummarizedExperiment"))`.
+#' `scran::findMarkers(pval.type = "any")`. No `auc` column. `log2FC` is
+#' computed from group vs. all-other-cells means (same method as `"scran"`).
+#' Requires `BiocManager::install(c("scran", "SummarizedExperiment"))`.
 #'
 #' In all cases, `avgExpr` for scran paths is computed from the assay matrix
 #' via `Matrix::rowMeans()` (scran does not output mean expression).
