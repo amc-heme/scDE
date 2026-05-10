@@ -183,7 +183,11 @@ Functions Applied
 +---------------------------------------+---------+---------------------------------+
 | Anndata                               | scanpy  | \`scanpy.tl.rank_genes_groups\` |
 +---------------------------------------+---------+---------------------------------+
-| SingleCellExperiment                  |         | Not yet supported               |
+| SingleCellExperiment (in-memory)      | presto  | \`presto::wilcoxauc\`           |
++---------------------------------------+---------+---------------------------------+
+| SingleCellExperiment (DelayedArray)   | scran   | \`scran::pairwiseWilcox\`       |
++---------------------------------------+---------+---------------------------------+
+| SingleCellExperiment (all, pairwise)  | scran   | \`scran::findMarkers\`          |
 +---------------------------------------+---------+---------------------------------+
 :::
 :::
