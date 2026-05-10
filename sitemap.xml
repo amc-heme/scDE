@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://amc-heme.github.io/scDE/404.html</loc></url>
+<url><loc>https://amc-heme.github.io/scDE/AGENTS.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/LICENSE-text.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/articles/DGE_Tutorial.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/articles/index.html</loc></url>
@@ -9,5 +10,6 @@
 <url><loc>https://amc-heme.github.io/scDE/reference/AML_h5ad.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/index.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/run_dge.html</loc></url>
+<url><loc>https://amc-heme.github.io/scDE/reference/scDE-package.html</loc></url>
 </urlset>
 

@@ -15,7 +15,9 @@ function.
 | Seurat | presto | \`presto::wilcoxauc\` |
 | Seurat v5 (with BPCells Count Matrix) | BPCells | \`BPcells::marker_features\` |
 | Anndata | scanpy | \`scanpy.tl.rank_genes_groups\` |
-| SingleCellExperiment |  | Not yet supported |
+| SingleCellExperiment (in-memory) | presto | \`presto::wilcoxauc\` |
+| SingleCellExperiment (DelayedArray) | scran | \`scran::pairwiseWilcox\` |
+| SingleCellExperiment (all, pairwise) | scran | \`scran::findMarkers\` |
 
 This vignette will overview the process of differential gene expression,
 and will demonstrate usage `run_dge` function to perfrom common

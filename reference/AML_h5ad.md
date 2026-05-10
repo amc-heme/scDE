@@ -15,7 +15,7 @@ experiments:
 
 - RNA (main experiment):
 
-  mRNA expression data for 462 genes used as markers for hamatopoietic
+  mRNA expression data for 462 genes used as markers for hematopoietic
   stem and progenitor (HSPC) cell types at varying stages of
   differentiation.
 
