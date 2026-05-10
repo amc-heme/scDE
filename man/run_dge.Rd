@@ -71,8 +71,9 @@ This parameter is currently ignored for anndata objects: only the "X" matrix
 may be used. The layer parameter is also ignored in BPCells objects.}
 
 \item{seurat_assay}{for Seurat objects, the assay to use for evaluating
-differences in expression. This parameter is used only for Seurat objects
-and is ignored for other supported object types.}
+differences in expression. This is used only for tests on Seurat objects.
+For SingleCellExperiment objects, the assay defaults to the main experiment,
+and for anndata objects the "X" matrix is used.}
 
 \item{lfc_format}{sets the format used for reporting log-fold changes. If
 "log2", log-fold changes will be reported in a log two fold change format,
