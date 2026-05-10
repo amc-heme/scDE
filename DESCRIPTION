@@ -1,7 +1,7 @@
 Package: scDE
 Type: Package
 Title: Unified Single Cell Differential Expression
-Version: 0.2.0.9000
+Version: 0.3.0.9000
 Authors@R: 
     c(
     person("William", "Showers", email = "bill.showers@refinedscience.com", role = c("aut", "cre")),
