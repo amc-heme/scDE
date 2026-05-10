@@ -723,12 +723,13 @@ run_dge.AnnDataR6 <-
         package = "scDE"
       )
 
-    reticulate::source_python(python_path)
+    py_env <- new.env()
+    reticulate::source_python(python_path, envir = py_env)
 
     # Run DGE via scanpy.tl.rank_genes_groups,
     # Return table
     dge_table <-
-      py$scanpy_dge(
+      py_env$scanpy_dge(
         adata = object,
         group_by = group_by,
         method = "wilcoxon"
