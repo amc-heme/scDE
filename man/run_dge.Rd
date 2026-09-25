@@ -16,6 +16,11 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
   slot = lifecycle::deprecated(),
   ...
 )
@@ -29,7 +34,13 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
-  slot = lifecycle::deprecated()
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
+  slot = lifecycle::deprecated(),
+  ...
 )
 
 \method{run_dge}{SingleCellExperiment}(
@@ -41,7 +52,13 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
-  slot = lifecycle::deprecated()
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
+  slot = lifecycle::deprecated(),
+  ...
 )
 
 \method{run_dge}{AnnDataR6}(
@@ -53,7 +70,13 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
-  slot = lifecycle::deprecated()
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
+  slot = lifecycle::deprecated(),
+  ...
 )
 }
 \arguments{
@@ -98,9 +121,26 @@ test per group via \code{scran::pairwiseWilcox}, indexing the result directly
 (returns an \code{auc} column; LFC from group means). \code{"scran_pairwise"} uses
 \code{scran::findMarkers} with pairwise comparisons combined across all groups
 (\code{pval.type = "any"}); no \code{auc} column is returned and \code{log2FC} is computed
-from group vs. all-other-cells means (same method as \code{"scran"}).}
+from group vs. all-other-cells means (same method as \code{"scran"}).
+For every supported object class, \code{test_use = "edgeR"} selects pseudobulk
+quasi-likelihood differential expression and requires \code{sample_by}, \code{group_1},
+and \code{group_2}. All other values preserve the existing Wilcoxon behavior.}
+
+\item{sample_by}{Metadata column containing biological sample identifiers.
+Required only for \code{test_use = "edgeR"}.}
+
+\item{group_1, group_2}{The two values of \code{group_by} to compare with edgeR.
+\code{group_1} is always the numerator, so positive \code{log2FC} values mean higher
+expression in \code{group_1}.}
+
+\item{min_cells}{Minimum cells required in each sample/group pseudobulk.}
+
+\item{robust}{Whether to use robust empirical Bayes estimation in
+\code{edgeR::glmQLFit()}.}
 
 \item{slot}{No longer used. Please use \code{layer} instead.}
+
+\item{...}{Additional arguments reserved for methods.}
 }
 \description{
 Performs differential expression testing on single cell data depending on the

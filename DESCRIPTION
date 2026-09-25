@@ -24,12 +24,19 @@ Imports:
   SCUBA,
   lifecycle
 Suggests:
+  edgeR,
   testthat (>= 3.0.0),
   reticulate,
   anndata,
+  SeuratObject,
   SingleCellExperiment,
   SummarizedExperiment,
-  scran
+  scran,
+  DelayedArray,
+  DelayedMatrixStats,
+  HDF5Array,
+  BPCells,
+  sparseMatrixStats
 Remotes: 
   github::amc-heme/presto,
   github::amc-heme/SCUBA
@@ -37,6 +44,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
 LazyData: true
 Depends: 
     R (>= 2.10)
