@@ -62,8 +62,10 @@ every returned gene/contrast test; \code{"both"} retains within-contrast
 \code{pval_adj} and adds \code{pval_adj_global}.}
 
 \item{test_use}{Sample-level test: \code{"edgeR"} (default) or
-\code{"pseudobulk_wilcox"}. See \code{\link[=run_dge]{run_dge()}} for details. Cell-level tests are not
-available here; \code{sample_by} must identify biological samples.}
+\code{"pseudobulk_wilcox"}. See \code{\link[=run_dge]{run_dge()}} for details. edgeR is restricted to
+sample-level groups where each sample belongs to one group; use pseudobulk
+Wilcoxon for paired cluster contrasts. Cell-level tests are not available
+here; \code{sample_by} must identify biological samples.}
 }
 \value{
 A tibble containing the common scDE result columns plus \code{group_1},

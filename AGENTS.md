@@ -46,7 +46,7 @@ CI pins Python 3.11 with a virtualenv named `"r-reticulate"`. Locally, set `RETI
 
 Sample-level (pseudobulk) tests, all object classes, require `sample_by`, `group_1`, `group_2`:
 - `test_use = "edgeR"` → edgeR QL; `test_use = "pseudobulk_wilcox"` → Wilcoxon on TMM log2-CPM (rank-sum for ordinary designs, signed-rank for blocked/paired). Shared code in `R/edger_backend.R` (`.scde_run_edger(method = ...)`).
-- Cell-level edgeR is intentionally blocked: `.scde_make_pseudobulk` errors when median cells per profile < 2. Cell-level comparisons use the Wilcoxon backends only.
+- Cell-level edgeR is intentionally blocked: per-cell sample identifiers error when median cells per profile < 2, and blocked designs where samples contribute to both groups (such as cluster-vs-cluster) are rejected for edgeR. Use pseudobulk Wilcoxon for paired cluster comparisons or the ordinary cell-level Wilcoxon backends.
 
 ## Output column normalization by backend
 

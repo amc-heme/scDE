@@ -129,7 +129,10 @@ counts per sample and group, and apply TMM normalization and
 \code{test_use = "edgeR"} runs edgeR quasi-likelihood testing;
 \code{test_use = "pseudobulk_wilcox"} runs a Wilcoxon test on log2-CPM across
 samples (rank-sum when each sample belongs to one group, signed-rank on
-within-sample differences when samples contribute to both groups). The
+within-sample differences when samples contribute to both groups). edgeR is
+restricted to the former sample-level design; cluster-to-cluster and other
+within-sample comparisons must use pseudobulk Wilcoxon or cell-level
+Wilcoxon. The
 Wilcoxon option needs more samples to have power (roughly 5+ per group).
 Pseudobulk tests are sample-level only: they error if \code{sample_by} yields
 about one cell per profile. For cell-level comparisons, use the default

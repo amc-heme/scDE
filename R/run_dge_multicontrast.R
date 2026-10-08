@@ -29,8 +29,10 @@
 #' @param robust Whether to use robust empirical Bayes estimation in
 #' `edgeR::glmQLFit()`. Ignored for `test_use = "pseudobulk_wilcox"`.
 #' @param test_use Sample-level test: `"edgeR"` (default) or
-#' `"pseudobulk_wilcox"`. See [run_dge()] for details. Cell-level tests are not
-#' available here; `sample_by` must identify biological samples.
+#' `"pseudobulk_wilcox"`. See [run_dge()] for details. edgeR is restricted to
+#' sample-level groups where each sample belongs to one group; use pseudobulk
+#' Wilcoxon for paired cluster contrasts. Cell-level tests are not available
+#' here; `sample_by` must identify biological samples.
 #' @param p_adjust_scope Multiple-testing scope. `"contrast"` retains edgeR's
 #' within-contrast FDR; `"global"` replaces `pval_adj` with BH adjustment over
 #' every returned gene/contrast test; `"both"` retains within-contrast

@@ -25,7 +25,7 @@ multicontrast_fixture <- function() {
   )
 }
 
-test_that("pairwise mode runs every cluster pair with blocked designs", {
+test_that("pseudobulk Wilcoxon runs every paired cluster contrast", {
   skip_if_not_installed("SingleCellExperiment")
   object <- multicontrast_fixture()
   observed <- suppressWarnings(run_dge_multicontrast(
@@ -33,14 +33,15 @@ test_that("pairwise mode runs every cluster pair with blocked designs", {
     group_by = "cluster",
     sample_by = "sample_id",
     contrast_mode = "pairwise",
-    min_cells = 10L
+    min_cells = 10L,
+    test_use = "pseudobulk_wilcox"
   ))
 
-  expect_s3_class(observed, "scDE_edger_multicontrast_results")
+  expect_s3_class(observed, "scDE_pseudobulk_wilcox_multicontrast_results")
   expect_setequal(unique(observed$contrast), c("A vs B", "A vs C", "B vs C"))
   expect_true(all(c("group_1", "group_2", "contrast", "feature", "log2FC") %in%
                     colnames(observed)))
-  details <- attr(observed, "edger_multicontrast_details")
+  details <- attr(observed, "pseudobulk_multicontrast_details")
   expect_identical(details$contrast_mode, "pairwise")
   expect_true(all(vapply(details$contrasts, function(x) {
     identical(x$design_type, "blocked")
@@ -56,7 +57,8 @@ test_that("reference mode uses the reference as denominator", {
     group_by = "cluster",
     sample_by = "sample_id",
     contrast_mode = "reference",
-    reference_group = "C"
+    reference_group = "C",
+    test_use = "pseudobulk_wilcox"
   ))
 
   expect_setequal(unique(observed$contrast), c("A vs C", "B vs C"))
@@ -70,12 +72,13 @@ test_that("one-versus-rest pools non-target clusters within sample", {
     group_by = "cluster",
     sample_by = "sample_id",
     contrast_mode = "one_vs_rest",
-    groups = c("A", "B")
+    groups = c("A", "B"),
+    test_use = "pseudobulk_wilcox"
   ))
 
   expect_setequal(unique(observed$contrast), c("A vs rest", "B vs rest"))
   expect_true(all(observed$group_2 == "rest"))
-  details <- attr(observed, "edger_multicontrast_details")$contrasts[["A vs rest"]]
+  details <- attr(observed, "pseudobulk_multicontrast_details")$contrasts[["A vs rest"]]
   expect_identical(details$design_type, "blocked")
   expect_true(all(details$sample_summary$retained_samples == 3L))
   expect_identical(
@@ -88,7 +91,8 @@ test_that("global adjustment modes are explicit", {
   skip_if_not_installed("SingleCellExperiment")
   both <- suppressWarnings(run_dge_multicontrast(
     multicontrast_fixture(), "cluster", "sample_id",
-    contrast_mode = "pairwise", p_adjust_scope = "both"
+    contrast_mode = "pairwise", p_adjust_scope = "both",
+    test_use = "pseudobulk_wilcox"
   ))
   expect_true("pval_adj_global" %in% colnames(both))
   expect_equal(both$pval_adj_global, stats::p.adjust(both$pval, "BH"))
@@ -96,10 +100,22 @@ test_that("global adjustment modes are explicit", {
   global <- suppressWarnings(run_dge_multicontrast(
     multicontrast_fixture(), "cluster", "sample_id",
     contrast_mode = "reference", reference_group = "C",
-    p_adjust_scope = "global", remove_raw_pval = TRUE
+    p_adjust_scope = "global", remove_raw_pval = TRUE,
+    test_use = "pseudobulk_wilcox"
   ))
   expect_false("pval" %in% colnames(global))
   expect_false("pval_adj_global" %in% colnames(global))
+})
+
+test_that("edgeR multicontrast rejects paired cluster comparisons", {
+  skip_if_not_installed("SingleCellExperiment")
+  expect_error(
+    run_dge_multicontrast(
+      multicontrast_fixture(), "cluster", "sample_id",
+      contrast_mode = "pairwise"
+    ),
+    "cluster-to-cluster"
+  )
 })
 
 test_that("multicontrast validation identifies invalid requests and contrasts", {

@@ -245,7 +245,11 @@
       call. = FALSE
     )
   }
-  invisible(NULL)
+  sample_group_counts <- tapply(
+    groups[eligible], samples[eligible], function(x) length(unique(x))
+  )
+  design_type <- if (all(sample_group_counts == 1L)) "ordinary" else "blocked"
+  invisible(design_type)
 }
 
 .scde_make_pseudobulk <- function(counts, metadata, sample_by, group_by,
@@ -373,9 +377,20 @@
   .scde_require_edger()
   # This metadata-only preflight must precede the potentially expensive raw
   # count scan, especially for BPCells and HDF5-backed matrices.
-  .scde_reject_cell_level_pseudobulk(
+  preflight_design <- .scde_reject_cell_level_pseudobulk(
     metadata, sample_by, group_by, group_1, group_2
   )
+  if (identical(method, "edgeR") && identical(preflight_design, "blocked")) {
+    stop(
+      "edgeR is restricted to sample-level groups: each biological sample ",
+      "must belong to only one of `group_1` or `group_2`. The selected groups ",
+      "occur within the same samples, as in a cluster-to-cluster comparison. ",
+      "Use `test_use = \"pseudobulk_wilcox\"` for paired sample-level ",
+      "pseudobulk testing, or omit `test_use` and `sample_by` for cell-level ",
+      "Wilcoxon.",
+      call. = FALSE
+    )
+  }
   if (isTRUE(validate_counts)) {
     .scde_validate_count_matrix(counts, rownames(metadata))
   }
