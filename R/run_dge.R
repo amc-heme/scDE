@@ -40,17 +40,28 @@
 #' `scran::findMarkers` with pairwise comparisons combined across all groups
 #' (`pval.type = "any"`); no `auc` column is returned and `log2FC` is computed
 #' from group vs. all-other-cells means (same method as `"scran"`).
-#' For every supported object class, `test_use = "edgeR"` selects pseudobulk
-#' quasi-likelihood differential expression and requires `sample_by`, `group_1`,
-#' and `group_2`. All other values preserve the existing Wilcoxon behavior.
+#' For every supported object class, two sample-level (pseudobulk) tests are
+#' available; both require `sample_by`, `group_1`, and `group_2`, aggregate raw
+#' counts per sample and group, and apply TMM normalization and
+#' `edgeR::filterByExpr()`:
+#' `test_use = "edgeR"` runs edgeR quasi-likelihood testing;
+#' `test_use = "pseudobulk_wilcox"` runs a Wilcoxon test on log2-CPM across
+#' samples (rank-sum when each sample belongs to one group, signed-rank on
+#' within-sample differences when samples contribute to both groups). The
+#' Wilcoxon option needs more samples to have power (roughly 5+ per group).
+#' Pseudobulk tests are sample-level only: they error if `sample_by` yields
+#' about one cell per profile. For cell-level comparisons, use the default
+#' Wilcoxon backends without `sample_by`. All other values preserve the
+#' existing Wilcoxon behavior.
 #' @param sample_by Metadata column containing biological sample identifiers.
-#' Required only for `test_use = "edgeR"`.
-#' @param group_1,group_2 The two values of `group_by` to compare with edgeR.
+#' Required only for the pseudobulk tests (`"edgeR"`, `"pseudobulk_wilcox"`).
+#' @param group_1,group_2 The two values of `group_by` to compare with a
+#' pseudobulk test.
 #' `group_1` is always the numerator, so positive `log2FC` values mean higher
 #' expression in `group_1`.
 #' @param min_cells Minimum cells required in each sample/group pseudobulk.
 #' @param robust Whether to use robust empirical Bayes estimation in
-#' `edgeR::glmQLFit()`.
+#' `edgeR::glmQLFit()`. Ignored for `test_use = "pseudobulk_wilcox"`.
 #' @param ... Additional arguments reserved for methods.
 #'
 #' @rdname run_dge
@@ -149,16 +160,19 @@ run_dge.Seurat <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    if (!is.null(test_use) && identical(tolower(test_use), "edger")) {
+    pseudobulk_method <- .scde_pseudobulk_method(test_use)
+    if (!is.null(pseudobulk_method)) {
       .scde_validate_edgeR_args(
         group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
       )
       extracted <- .scde_seurat_counts(object, seurat_assay, layer)
       return(.scde_run_edger(
         extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust
+        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
+        method = pseudobulk_method
       ))
     }
+    .scde_warn_ignored_sample_by(sample_by)
     # Define layer to use. If not specified by the user, use the
     # default layer, "data"
     layer <- layer %||% SCUBA::default_layer(object)
@@ -447,16 +461,19 @@ run_dge.SingleCellExperiment <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    if (!is.null(test_use) && identical(tolower(test_use), "edger")) {
+    pseudobulk_method <- .scde_pseudobulk_method(test_use)
+    if (!is.null(pseudobulk_method)) {
       .scde_validate_edgeR_args(
         group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
       )
       extracted <- .scde_sce_counts(object, layer)
       return(.scde_run_edger(
         extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust
+        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
+        method = pseudobulk_method
       ))
     }
+    .scde_warn_ignored_sample_by(sample_by)
     # SummarizedExperiment is always needed for matrix/colData extraction
     if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
       stop(
@@ -800,16 +817,19 @@ run_dge.AnnDataR6 <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    if (!is.null(test_use) && identical(tolower(test_use), "edger")) {
+    pseudobulk_method <- .scde_pseudobulk_method(test_use)
+    if (!is.null(pseudobulk_method)) {
       .scde_validate_edgeR_args(
         group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
       )
       extracted <- .scde_anndata_counts(object, layer)
       return(.scde_run_edger(
         extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust
+        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
+        method = pseudobulk_method
       ))
     }
+    .scde_warn_ignored_sample_by(sample_by)
     if (!requireNamespace("reticulate", quietly = TRUE)) {
       stop(
         "Package 'reticulate' is required for AnnData objects. ",

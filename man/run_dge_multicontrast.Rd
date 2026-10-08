@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_dge_multicontrast.R
 \name{run_dge_multicontrast}
 \alias{run_dge_multicontrast}
-\title{Multi-contrast pseudobulk differential expression with edgeR}
+\title{Multi-contrast pseudobulk differential expression}
 \usage{
 run_dge_multicontrast(
   object,
@@ -17,7 +17,8 @@ run_dge_multicontrast(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   robust = FALSE,
-  p_adjust_scope = c("contrast", "global", "both")
+  p_adjust_scope = c("contrast", "global", "both"),
+  test_use = "edgeR"
 )
 }
 \arguments{
@@ -53,20 +54,26 @@ pseudobulk profile.}
 \item{remove_raw_pval}{Whether to remove the raw p-value column.}
 
 \item{robust}{Whether to use robust empirical Bayes estimation in
-\code{edgeR::glmQLFit()}.}
+\code{edgeR::glmQLFit()}. Ignored for \code{test_use = "pseudobulk_wilcox"}.}
 
 \item{p_adjust_scope}{Multiple-testing scope. \code{"contrast"} retains edgeR's
 within-contrast FDR; \code{"global"} replaces \code{pval_adj} with BH adjustment over
 every returned gene/contrast test; \code{"both"} retains within-contrast
 \code{pval_adj} and adds \code{pval_adj_global}.}
+
+\item{test_use}{Sample-level test: \code{"edgeR"} (default) or
+\code{"pseudobulk_wilcox"}. See \code{\link[=run_dge]{run_dge()}} for details. Cell-level tests are not
+available here; \code{sample_by} must identify biological samples.}
 }
 \value{
 A tibble containing the common scDE result columns plus \code{group_1},
-\code{group_2}, and \code{contrast}. Per-contrast edgeR details are stored in the
-\code{edger_multicontrast_details} attribute.
+\code{group_2}, and \code{contrast}. Per-contrast details are stored in the
+\code{edger_multicontrast_details} attribute (\code{pseudobulk_multicontrast_details}
+for \code{test_use = "pseudobulk_wilcox"}).
 }
 \description{
-Runs a collection of two-group edgeR quasi-likelihood comparisons while
+Runs a collection of two-group pseudobulk comparisons (edgeR
+quasi-likelihood or pseudobulk Wilcoxon) while
 reusing scDE's raw-count extraction, pseudobulk aggregation, sample pairing,
 and design validation. This is particularly useful for comparing cell-level
 groups such as clusters across biological samples.

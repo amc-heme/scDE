@@ -67,10 +67,16 @@ test_that("edgeR supports AnnData count layers", {
   skip_if_not_installed("anndata")
   skip_if_not_installed("reticulate")
   skip_if_no_python <- function() {
-    if (!reticulate::py_module_available("anndata")) skip("Python anndata unavailable")
+    available <- tryCatch(
+      suppressWarnings(reticulate::py_module_available("anndata")),
+      error = function(cnd) FALSE
+    )
+    if (!isTRUE(available)) skip("Python anndata unavailable")
   }
   skip_if_no_python()
   fixture <- edger_fixture(FALSE)
+  # Recent Python anndata releases no longer accept a dtype argument here.
+  # Let AnnData infer the dtype from the raw-count matrix.
   object <- anndata::AnnData(
     X = t(fixture$counts),
     obs = fixture$metadata,

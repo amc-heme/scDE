@@ -122,21 +122,32 @@ test per group via \code{scran::pairwiseWilcox}, indexing the result directly
 \code{scran::findMarkers} with pairwise comparisons combined across all groups
 (\code{pval.type = "any"}); no \code{auc} column is returned and \code{log2FC} is computed
 from group vs. all-other-cells means (same method as \code{"scran"}).
-For every supported object class, \code{test_use = "edgeR"} selects pseudobulk
-quasi-likelihood differential expression and requires \code{sample_by}, \code{group_1},
-and \code{group_2}. All other values preserve the existing Wilcoxon behavior.}
+For every supported object class, two sample-level (pseudobulk) tests are
+available; both require \code{sample_by}, \code{group_1}, and \code{group_2}, aggregate raw
+counts per sample and group, and apply TMM normalization and
+\code{edgeR::filterByExpr()}:
+\code{test_use = "edgeR"} runs edgeR quasi-likelihood testing;
+\code{test_use = "pseudobulk_wilcox"} runs a Wilcoxon test on log2-CPM across
+samples (rank-sum when each sample belongs to one group, signed-rank on
+within-sample differences when samples contribute to both groups). The
+Wilcoxon option needs more samples to have power (roughly 5+ per group).
+Pseudobulk tests are sample-level only: they error if \code{sample_by} yields
+about one cell per profile. For cell-level comparisons, use the default
+Wilcoxon backends without \code{sample_by}. All other values preserve the
+existing Wilcoxon behavior.}
 
 \item{sample_by}{Metadata column containing biological sample identifiers.
-Required only for \code{test_use = "edgeR"}.}
+Required only for the pseudobulk tests (\code{"edgeR"}, \code{"pseudobulk_wilcox"}).}
 
-\item{group_1, group_2}{The two values of \code{group_by} to compare with edgeR.
+\item{group_1, group_2}{The two values of \code{group_by} to compare with a
+pseudobulk test.
 \code{group_1} is always the numerator, so positive \code{log2FC} values mean higher
 expression in \code{group_1}.}
 
 \item{min_cells}{Minimum cells required in each sample/group pseudobulk.}
 
 \item{robust}{Whether to use robust empirical Bayes estimation in
-\code{edgeR::glmQLFit()}.}
+\code{edgeR::glmQLFit()}. Ignored for \code{test_use = "pseudobulk_wilcox"}.}
 
 \item{slot}{No longer used. Please use \code{layer} instead.}
 

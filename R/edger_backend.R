@@ -10,6 +10,33 @@
   }
 }
 
+# Maps `test_use` to a pseudobulk method ("edgeR" or "wilcox"), or NULL when
+# `test_use` selects a cell-level backend.
+.scde_pseudobulk_method <- function(test_use) {
+  if (is.null(test_use)) return(NULL)
+  switch(
+    tolower(test_use),
+    edger = "edgeR",
+    pseudobulk_wilcox = "wilcox",
+    NULL
+  )
+}
+
+# Prevent a supplied biological-sample column from looking effective when a
+# cell-level backend was selected. Pseudobulk methods return before this helper
+# is called.
+.scde_warn_ignored_sample_by <- function(sample_by) {
+  if (!is.null(sample_by)) {
+    warning(
+      "`sample_by` is ignored by cell-level differential-expression tests. ",
+      "Use `test_use = \"edgeR\"` or `test_use = \"pseudobulk_wilcox\"` ",
+      "for sample-level testing, or omit `sample_by` for cell-level Wilcoxon.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
 .scde_validate_scalar_name <- function(x, argument) {
   if (!is.character(x) || length(x) != 1L || is.na(x) || !nzchar(x)) {
     stop("`", argument, "` must be one non-missing column name.", call. = FALSE)
@@ -34,7 +61,7 @@
     stop("`min_cells` must be one positive whole number.", call. = FALSE)
   }
   if (!identical(lfc_format, "log2")) {
-    stop("edgeR reports log2 fold changes; use `lfc_format = \"log2\"`.",
+    stop("Pseudobulk tests report log2 fold changes; use `lfc_format = \"log2\"`.",
          call. = FALSE)
   }
   if (!is.logical(robust) || length(robust) != 1L || is.na(robust)) {
@@ -189,6 +216,38 @@
   }
 }
 
+.scde_reject_cell_level_pseudobulk <- function(metadata, sample_by, group_by,
+                                               group_1, group_2) {
+  missing_columns <- setdiff(c(sample_by, group_by), colnames(metadata))
+  if (length(missing_columns)) {
+    stop("Metadata column(s) not found: ", paste(missing_columns, collapse = ", "),
+         ".", call. = FALSE)
+  }
+
+  samples <- as.character(metadata[[sample_by]])
+  groups <- as.character(metadata[[group_by]])
+  eligible <- !is.na(samples) & nzchar(trimws(samples)) &
+    !is.na(groups) & nzchar(trimws(groups)) &
+    groups %in% c(group_1, group_2)
+  if (!any(eligible)) {
+    stop("No cells with valid sample IDs belong to `group_1` or `group_2`.",
+         call. = FALSE)
+  }
+
+  profile_sizes <- table(samples[eligible], groups[eligible])
+  profile_sizes <- as.numeric(profile_sizes[profile_sizes > 0L])
+  if (stats::median(profile_sizes) < 2) {
+    stop(
+      "`sample_by` ('", sample_by, "') yields about one cell per sample/group ",
+      "profile, i.e. a cell-level comparison. Pseudobulk tests require ",
+      "biological sample identifiers. For cell-level comparisons, omit ",
+      "`test_use` (Wilcoxon) and `sample_by`.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
 .scde_make_pseudobulk <- function(counts, metadata, sample_by, group_by,
                                   group_1, group_2, min_cells) {
   missing_columns <- setdiff(c(sample_by, group_by), colnames(metadata))
@@ -224,6 +283,9 @@
     group = groups[eligible][first],
     n_cells = as.integer(tabulate(membership, nbins = length(unique_key))),
     stringsAsFactors = FALSE
+  )
+  .scde_reject_cell_level_pseudobulk(
+    metadata, sample_by, group_by, group_1, group_2
   )
   info$min_cells_pass <- info$n_cells >= min_cells
   paired <- if (design_type == "blocked") {
@@ -305,8 +367,15 @@
 .scde_run_edger <- function(counts, metadata, sample_by, group_by, group_1,
                             group_2, min_cells, positive_only,
                             remove_raw_pval, robust,
-                            validate_counts = TRUE) {
+                            validate_counts = TRUE,
+                            method = c("edgeR", "wilcox")) {
+  method <- match.arg(method)
   .scde_require_edger()
+  # This metadata-only preflight must precede the potentially expensive raw
+  # count scan, especially for BPCells and HDF5-backed matrices.
+  .scde_reject_cell_level_pseudobulk(
+    metadata, sample_by, group_by, group_1, group_2
+  )
   if (isTRUE(validate_counts)) {
     .scde_validate_count_matrix(counts, rownames(metadata))
   }
@@ -326,19 +395,24 @@
   keep <- edgeR::filterByExpr(y, design = design_info$design)
   if (!any(keep)) stop("No genes passed edgeR::filterByExpr().", call. = FALSE)
   y <- y[keep, , keep.lib.sizes = FALSE]
-  y <- edgeR::estimateDisp(y, design_info$design)
-  fit <- edgeR::glmQLFit(y, design_info$design, robust = robust)
-  test <- edgeR::glmQLFTest(fit, contrast = design_info$contrast)
-  table <- edgeR::topTags(test, n = Inf, sort.by = "PValue")$table
+  if (identical(method, "wilcox")) {
+    stats_table <- .scde_pseudobulk_wilcox(y, pseudobulk, group_1, group_2)
+  } else {
+    y <- edgeR::estimateDisp(y, design_info$design)
+    fit <- edgeR::glmQLFit(y, design_info$design, robust = robust)
+    test <- edgeR::glmQLFTest(fit, contrast = design_info$contrast)
+    table <- edgeR::topTags(test, n = Inf, sort.by = "PValue")$table
+    stats_table <- data.frame(
+      feature = rownames(table),
+      avgExpr = as.numeric(table$logCPM),
+      log2FC = as.numeric(table$logFC),
+      pval = as.numeric(table$PValue),
+      pval_adj = as.numeric(table$FDR),
+      stringsAsFactors = FALSE
+    )
+  }
 
-  results <- tibble::tibble(
-    group = group_1,
-    feature = rownames(table),
-    avgExpr = as.numeric(table$logCPM),
-    log2FC = as.numeric(table$logFC),
-    pval = as.numeric(table$PValue),
-    pval_adj = as.numeric(table$FDR)
-  )
+  results <- tibble::tibble(group = group_1, stats_table)
   if (positive_only) results <- dplyr::filter(results, .data$log2FC > 0)
   if (remove_raw_pval) results <- dplyr::select(results, -dplyr::all_of("pval"))
   results <- dplyr::arrange(
@@ -363,7 +437,8 @@
     warning(nrow(pseudobulk$excluded_profiles),
             " sample/group pseudobulk profile(s) were excluded.", call. = FALSE)
   }
-  attr(results, "edger_details") <- list(
+  attr(results, .scde_details_attr(method)) <- list(
+    method = method,
     design_type = pseudobulk$design_type,
     group_1 = group_1,
     group_2 = group_2,
@@ -378,6 +453,68 @@
     normalization_method = "TMM",
     normalization_factors = stats::setNames(y$samples$norm.factors, rownames(y$samples))
   )
-  class(results) <- c("scDE_edger_results", class(results))
+  result_class <- if (identical(method, "edgeR")) {
+    "scDE_edger_results"
+  } else {
+    "scDE_pseudobulk_wilcox_results"
+  }
+  class(results) <- c(result_class, class(results))
   results
+}
+
+.scde_details_attr <- function(method) {
+  if (identical(method, "edgeR")) "edger_details" else "pseudobulk_details"
+}
+
+# Wilcoxon test across pseudobulk profiles on TMM-normalized log2-CPM.
+# Ordinary designs (each sample in one group) use the rank-sum test; blocked
+# designs (each sample contributes to both groups) use the signed-rank test on
+# within-sample differences.
+.scde_pseudobulk_wilcox <- function(y, pseudobulk, group_1, group_2) {
+  log_cpm <- edgeR::cpm(y, log = TRUE, prior.count = 2)
+  meta <- pseudobulk$metadata
+  in_group_1 <- meta$group == group_1
+  safe_p <- function(...) {
+    p <- tryCatch(suppressWarnings(stats::wilcox.test(...)$p.value),
+                  error = function(cnd) NA_real_)
+    if (is.na(p)) 1 else p
+  }
+
+  if (identical(pseudobulk$design_type, "ordinary")) {
+    x_1 <- log_cpm[, in_group_1, drop = FALSE]
+    x_2 <- log_cpm[, !in_group_1, drop = FALSE]
+    log2FC <- rowMeans(x_1) - rowMeans(x_2)
+    pval <- vapply(seq_len(nrow(log_cpm)), function(i) {
+      safe_p(x_1[i, ], x_2[i, ])
+    }, numeric(1))
+    min_p <- 2 / choose(ncol(x_1) + ncol(x_2), ncol(x_1))
+  } else {
+    samples <- unique(meta$sample_id)
+    index_1 <- which(in_group_1)[match(samples, meta$sample_id[in_group_1])]
+    index_2 <- which(!in_group_1)[match(samples, meta$sample_id[!in_group_1])]
+    differences <- log_cpm[, index_1, drop = FALSE] - log_cpm[, index_2, drop = FALSE]
+    log2FC <- rowMeans(differences)
+    pval <- vapply(seq_len(nrow(log_cpm)), function(i) {
+      safe_p(differences[i, ])
+    }, numeric(1))
+    min_p <- 2 / 2^length(samples)
+  }
+
+  if (min_p > 0.05) {
+    warning(
+      "With the retained samples, the smallest attainable Wilcoxon p-value is ",
+      signif(min_p, 3), "; no gene can reach significance. Consider ",
+      "test_use = \"edgeR\" for small numbers of samples.",
+      call. = FALSE
+    )
+  }
+
+  data.frame(
+    feature = rownames(log_cpm),
+    avgExpr = as.numeric(edgeR::aveLogCPM(y)),
+    log2FC = as.numeric(log2FC),
+    pval = pval,
+    pval_adj = stats::p.adjust(pval, method = "BH"),
+    stringsAsFactors = FALSE
+  )
 }

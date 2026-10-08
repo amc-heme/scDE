@@ -1,6 +1,7 @@
-#' Multi-contrast pseudobulk differential expression with edgeR
+#' Multi-contrast pseudobulk differential expression
 #'
-#' Runs a collection of two-group edgeR quasi-likelihood comparisons while
+#' Runs a collection of two-group pseudobulk comparisons (edgeR
+#' quasi-likelihood or pseudobulk Wilcoxon) while
 #' reusing scDE's raw-count extraction, pseudobulk aggregation, sample pairing,
 #' and design validation. This is particularly useful for comparing cell-level
 #' groups such as clusters across biological samples.
@@ -26,15 +27,19 @@
 #' @param positive_only Whether to retain only positive log2 fold changes.
 #' @param remove_raw_pval Whether to remove the raw p-value column.
 #' @param robust Whether to use robust empirical Bayes estimation in
-#' `edgeR::glmQLFit()`.
+#' `edgeR::glmQLFit()`. Ignored for `test_use = "pseudobulk_wilcox"`.
+#' @param test_use Sample-level test: `"edgeR"` (default) or
+#' `"pseudobulk_wilcox"`. See [run_dge()] for details. Cell-level tests are not
+#' available here; `sample_by` must identify biological samples.
 #' @param p_adjust_scope Multiple-testing scope. `"contrast"` retains edgeR's
 #' within-contrast FDR; `"global"` replaces `pval_adj` with BH adjustment over
 #' every returned gene/contrast test; `"both"` retains within-contrast
 #' `pval_adj` and adds `pval_adj_global`.
 #'
 #' @return A tibble containing the common scDE result columns plus `group_1`,
-#' `group_2`, and `contrast`. Per-contrast edgeR details are stored in the
-#' `edger_multicontrast_details` attribute.
+#' `group_2`, and `contrast`. Per-contrast details are stored in the
+#' `edger_multicontrast_details` attribute (`pseudobulk_multicontrast_details`
+#' for `test_use = "pseudobulk_wilcox"`).
 #'
 #' @export
 run_dge_multicontrast <- function(
@@ -50,9 +55,16 @@ run_dge_multicontrast <- function(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   robust = FALSE,
-  p_adjust_scope = c("contrast", "global", "both")
+  p_adjust_scope = c("contrast", "global", "both"),
+  test_use = "edgeR"
 ) {
   contrast_mode <- match.arg(contrast_mode)
+  method <- if (is.character(test_use) && length(test_use) == 1L) {
+    .scde_pseudobulk_method(test_use)
+  }
+  if (is.null(method)) {
+    stop("`test_use` must be \"edgeR\" or \"pseudobulk_wilcox\".", call. = FALSE)
+  }
   p_adjust_scope <- match.arg(p_adjust_scope)
   .scde_validate_scalar_name(group_by, "group_by")
   .scde_validate_scalar_name(sample_by, "sample_by")
@@ -163,7 +175,8 @@ run_dge_multicontrast <- function(
           positive_only,
           FALSE,
           robust,
-          validate_counts = FALSE
+          validate_counts = FALSE,
+          method = method
         ),
         warning = function(cnd) {
           warning_messages[[i]] <<- c(warning_messages[[i]], conditionMessage(cnd))
@@ -172,14 +185,14 @@ run_dge_multicontrast <- function(
       ),
       error = function(cnd) {
         stop(
-          "edgeR contrast '", contrast_table$contrast[[i]], "' failed: ",
+          method, " contrast '", contrast_table$contrast[[i]], "' failed: ",
           conditionMessage(cnd),
           call. = FALSE
         )
       }
     )
 
-    contrast_details <- attr(result, "edger_details")
+    contrast_details <- attr(result, .scde_details_attr(method))
     if (identical(contrast_mode, "one_vs_rest")) {
       contrast_details$group_2 <- "rest"
       contrast_details$sample_summary$group[
@@ -229,13 +242,24 @@ run_dge_multicontrast <- function(
     )
   }
 
-  attr(results, "edger_multicontrast_details") <- list(
+  details_name <- if (identical(method, "edgeR")) {
+    "edger_multicontrast_details"
+  } else {
+    "pseudobulk_multicontrast_details"
+  }
+  attr(results, details_name) <- list(
+    method = method,
     contrast_mode = contrast_mode,
     contrast_table = contrast_table,
     p_adjust_scope = p_adjust_scope,
     contrasts = details,
     warnings = warning_messages
   )
-  class(results) <- c("scDE_edger_multicontrast_results", class(results))
+  result_class <- if (identical(method, "edgeR")) {
+    "scDE_edger_multicontrast_results"
+  } else {
+    "scDE_pseudobulk_wilcox_multicontrast_results"
+  }
+  class(results) <- c(result_class, class(results))
   results
 }

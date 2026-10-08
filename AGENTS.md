@@ -44,6 +44,10 @@ CI pins Python 3.11 with a virtualenv named `"r-reticulate"`. Locally, set `RETI
 - `AnnDataR6` → Python scanpy via reticulate
 - `default` → warning + NULL
 
+Sample-level (pseudobulk) tests, all object classes, require `sample_by`, `group_1`, `group_2`:
+- `test_use = "edgeR"` → edgeR QL; `test_use = "pseudobulk_wilcox"` → Wilcoxon on TMM log2-CPM (rank-sum for ordinary designs, signed-rank for blocked/paired). Shared code in `R/edger_backend.R` (`.scde_run_edger(method = ...)`).
+- Cell-level edgeR is intentionally blocked: `.scde_make_pseudobulk` errors when median cells per profile < 2. Cell-level comparisons use the Wilcoxon backends only.
+
 ## Output column normalization by backend
 
 Each backend produces different raw names; they're normalized to a common schema. Key renames:
