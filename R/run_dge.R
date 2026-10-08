@@ -319,13 +319,45 @@ run_dge.Seurat <-
           if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
         }
     } else if (test_use == "Presto") {
+      # Call Presto's matrix method directly. The Seurat adapter in older
+      # releases of Presto calls GetAssayData(slot = ...), which is defunct in
+      # SeuratObject >= 5.3. Extracting the layer here preserves the Wilcoxon
+      # calculation while remaining compatible with both Assay and Assay5.
+      expression_matrix <-
+        if (inherits(object[[seurat_assay]], "Assay5")) {
+          available_layers <- SeuratObject::Layers(object[[seurat_assay]])
+          if (!layer %in% available_layers) {
+            stop(
+              "Layer '", layer, "' was not found in assay '",
+              seurat_assay, "'. Available layers: ",
+              paste(available_layers, collapse = ", "), "."
+            )
+          }
+          SeuratObject::LayerData(object[[seurat_assay]], layer = layer)
+        } else {
+          SeuratObject::GetAssayData(
+            object = object,
+            assay = seurat_assay,
+            layer = layer
+          )
+        }
+
+      if (!group_by %in% colnames(object[[]])) {
+        stop("Metadata column '", group_by, "' was not found in the Seurat object.")
+      }
+      groups <- object[[]][[group_by]]
+      if (length(groups) != ncol(expression_matrix)) {
+        stop("Expression-matrix cells and grouping metadata are misaligned.")
+      }
+      if (anyNA(groups)) {
+        stop("Metadata column '", group_by, "' contains missing values.")
+      }
+
       # Run presto
       dge_table <-
         presto::wilcoxauc(
-          object,
-          group_by = group_by,
-          assay = layer,
-          seurat_assay = seurat_assay
+          expression_matrix,
+          y = groups
         )
 
       # Convert to tibble, remove wilcoxon rank sum U statistic
