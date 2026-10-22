@@ -1,6 +1,6 @@
 # AGENTS.md
 
-R package: `scDE` v0.2.0.9000. Single-package repo (no monorepo). Unified DGE for Seurat, SingleCellExperiment, and AnnData single-cell objects.
+R package: `scDE` v0.3.1. Single-package repo (no monorepo). Unified DGE for Seurat, SingleCellExperiment, AnnData and file-backed SCUBA (`scuba_source`) single-cell objects.
 
 ## Developer commands
 
@@ -11,7 +11,7 @@ devtools::check()       # CRAN-style check
 pkgdown::build_site()   # docs site
 ```
 
-**No test suite exists.** `testthat` is in `Suggests` but `tests/` directory does not exist.
+Tests: `tests/testthat/` (testthat edition 3). `test-run_dge-scuba_source.R` needs the SCUBA `feature/julia-engine` branch with a working Julia engine and skips otherwise; run with `devtools::test()`.
 
 ## Generated files — never hand-edit
 
@@ -42,6 +42,7 @@ CI pins Python 3.11 with a virtualenv named `"r-reticulate"`. Locally, set `RETI
 - `Seurat` → presto (`presto::wilcoxauc`) or BPCells (`BPCells::marker_features`) based on matrix class at runtime
 - `SingleCellExperiment` → presto (`presto::wilcoxauc`) for in-memory matrices, scran (`scran::pairwiseWilcox` or `scran::findMarkers`) for DelayedArray-backed matrices; backend controlled by `test_use` param
 - `AnnDataR6` → Python scanpy via reticulate
+- `scuba_source` (file-backed .h5ad/.h5mu from `SCUBA::open_h5ad()` / `open_h5mu()`, SCUBA >= 2.0.0.9000 Julia engine) → presto (`presto::wilcoxauc`) on `SCUBA::fetch_matrix()` blocks of `options(scDE.chunk_features)` (2000) features; BH recomputed per group over all features. Groups via `SCUBA::fetch_metadata()`. Presto post-processing shared with the Seurat/SCE presto paths in `.presto_table()` (`R/run_dge_scuba_source.R`).
 - `default` → warning + NULL
 
 ## Output column normalization by backend

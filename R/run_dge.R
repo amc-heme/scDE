@@ -5,7 +5,8 @@
 #' on the test used.
 #'
 #' @param object a single-cell object. Currently, Seurat,
-#' SingleCellExperiment, and AnnData objects are supported.
+#' SingleCellExperiment, AnnData and file-backed SCUBA (`scuba_source`, see
+#' `SCUBA::open_h5ad()`) objects are supported.
 #' @param group_by metadata variable to use for forming differential gene
 #' expression groups. A group will be created for all values in this variable
 #' present in the object passed to this function.
@@ -100,7 +101,8 @@ run_dge.default <-
       paste0(
         "run_dge does not know how to handle object of class ",
         paste(class(object), collapse = ", "),
-        ". Currently supported classes: Seurat, SingleCellExperiment, and AnnData."
+        ". Currently supported classes: Seurat, SingleCellExperiment, AnnData ",
+        "and scuba_source."
       )
     )
   }
@@ -289,42 +291,13 @@ run_dge.Seurat <-
           seurat_assay = seurat_assay
         )
 
-      # Convert to tibble, remove wilcoxon rank sum U statistic
+      # Remove the Wilcoxon rank-sum U statistic, then apply the filters, LFC
+      # format and column layout shared by every Presto-based method
       dge_table <-
-        dge_table %>%
-        tibble::as_tibble() %>%
-        dplyr::select(-statistic) %>%
-        # Remove p-value column if specified (only shows adjusted p-value)
-        {
-          if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
-        } %>%
-        # Return only genes that are upregulated in each group
-        # if positive_only is TRUE
-        {
-          if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .
-        } %>%
-        # Sort by group, then by adjusted p-value, then by descending LFC
-        dplyr::arrange(group, padj, desc(abs(logFC)))
-
-      # Convert to log2FC format if desired by user
-      if (lfc_format == "log2") {
-        dge_table$logFC <-
-          scDE:::ln_to_log2(dge_table$logFC)
-
-        # Rename column to specify log2FC values
-        dge_table <-
-          dge_table %>%
-          dplyr::rename(log2FC = logFC)
-      }
-
-      # Rename adjusted p-value column to pval_adj
-      dge_table <-
-        dge_table %>%
-        dplyr::rename(pval_adj = padj)
-
-      # Put group before feature column
-      dge_table <-
-        dplyr::relocate(dge_table, group, .before = feature)
+        .presto_table(
+          dplyr::select(tibble::as_tibble(dge_table), -statistic),
+          lfc_format, positive_only, remove_raw_pval
+        )
     }
 
     dge_table
@@ -476,27 +449,8 @@ run_dge.SingleCellExperiment <-
       dge_table <-
         presto::wilcoxauc(mat, y = groups) %>%
         tibble::as_tibble() %>%
-        dplyr::select(-statistic) %>%
-        {
-          if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
-        } %>%
-        {
-          if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .
-        } %>%
-        dplyr::arrange(group, padj, desc(abs(logFC)))
-
-      # Convert to log2FC format if desired by user
-      if (lfc_format == "log2") {
-        dge_table$logFC <- scDE:::ln_to_log2(dge_table$logFC)
-        dge_table <- dge_table %>% dplyr::rename(log2FC = logFC)
-      }
-
-      dge_table <-
-        dge_table %>%
-        dplyr::rename(pval_adj = padj) %>%
-        dplyr::relocate(group, .before = feature)
-
-      return(dge_table)
+        dplyr::select(-statistic)
+      return(.presto_table(dge_table, lfc_format, positive_only, remove_raw_pval))
     }
 
     # MatrixGenerics::rowMeans2 (called below) dispatches on matrix class.
