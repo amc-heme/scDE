@@ -44,6 +44,8 @@ Suggests:
 Remotes: 
   github::amc-heme/presto,
   github::amc-heme/SCUBA@feature/pseudobulk-scuba
+Additional_repositories: 
+  https://bnprks.r-universe.dev
 License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
