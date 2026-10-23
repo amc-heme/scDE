@@ -12,7 +12,8 @@
 #' `layer` defaults to `SCUBA::default_layer()` (`"X"`), which is assumed to
 #' hold log-normalised values like a Seurat `data` layer. Output schema matches
 #' the Seurat/Presto path: `group, feature, avgExpr, log2FC, auc, pval,
-#' pval_adj, pct_in, pct_out`.
+#' pval_adj, pct_in, pct_out`. `test_use = "edgeR"` (pseudobulk) is handled
+#' before dispatch, see above.
 #'
 #' @export
 run_dge.scuba_source <-
@@ -25,13 +26,21 @@ run_dge.scuba_source <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
-    slot = lifecycle::deprecated()
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
   ) {
     if (!is.null(test_use) && tolower(test_use) != "presto") {
       stop(
-        "run_dge() for scuba_source objects supports test_use = \"Presto\" only."
+        "run_dge() for scuba_source objects supports test_use = \"Presto\" ",
+        "(cell level) or \"edgeR\" (pseudobulk) only."
       )
     }
+    .scde_warn_ignored_sample_by(sample_by)
 
     assay <- seurat_assay %||% SCUBA::scuba_source_modalities(object)[1]
     layer <- layer %||% SCUBA::default_layer(object)

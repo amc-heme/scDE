@@ -2,6 +2,7 @@
 % Please edit documentation in R/run_dge.R, R/run_dge_scuba_source.R
 \name{run_dge}
 \alias{run_dge}
+\alias{run_dge.scuba_pseudobulk}
 \alias{run_dge.Seurat}
 \alias{run_dge.SingleCellExperiment}
 \alias{run_dge.AnnDataR6}
@@ -17,6 +18,24 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
+  slot = lifecycle::deprecated(),
+  ...
+)
+
+\method{run_dge}{scuba_pseudobulk}(
+  object,
+  group_by = NULL,
+  layer = NULL,
+  seurat_assay = NULL,
+  lfc_format = "log2",
+  positive_only = FALSE,
+  remove_raw_pval = FALSE,
+  test_use = "edgeR",
   sample_by = NULL,
   group_1 = NULL,
   group_2 = NULL,
@@ -89,13 +108,21 @@ run_dge(
   positive_only = FALSE,
   remove_raw_pval = FALSE,
   test_use = NULL,
-  slot = lifecycle::deprecated()
+  sample_by = NULL,
+  group_1 = NULL,
+  group_2 = NULL,
+  min_cells = 10L,
+  robust = FALSE,
+  slot = lifecycle::deprecated(),
+  ...
 )
 }
 \arguments{
 \item{object}{a single-cell object. Currently, Seurat,
 SingleCellExperiment, AnnData and file-backed SCUBA (\code{scuba_source}, see
-\code{SCUBA::open_h5ad()}) objects are supported.}
+\code{SCUBA::open_h5ad()}) objects are supported, as well as pre-aggregated
+pseudobulk profiles (\code{scuba_pseudobulk}, see \code{SCUBA::pseudobulk()}) for
+\code{test_use = "edgeR"}.}
 
 \item{group_by}{metadata variable to use for forming differential gene
 expression groups. A group will be created for all values in this variable
@@ -136,25 +163,25 @@ test per group via \code{scran::pairwiseWilcox}, indexing the result directly
 \code{scran::findMarkers} with pairwise comparisons combined across all groups
 (\code{pval.type = "any"}); no \code{auc} column is returned and \code{log2FC} is computed
 from group vs. all-other-cells means (same method as \code{"scran"}).
-For every supported object class, two sample-level (pseudobulk) tests are
-available; both require \code{sample_by}, \code{group_1}, and \code{group_2}, aggregate raw
-counts per sample and group, and apply TMM normalization and
-\code{edgeR::filterByExpr()}:
-\code{test_use = "edgeR"} runs edgeR quasi-likelihood testing;
-\code{test_use = "pseudobulk_wilcox"} runs a Wilcoxon test on log2-CPM across
-samples (rank-sum when each sample belongs to one group, signed-rank on
-within-sample differences when samples contribute to both groups). edgeR is
-restricted to the former sample-level design; cluster-to-cluster and other
-within-sample comparisons must use pseudobulk Wilcoxon or cell-level
-Wilcoxon. The
-Wilcoxon option needs more samples to have power (roughly 5+ per group).
-Pseudobulk tests are sample-level only: they error if \code{sample_by} yields
-about one cell per profile. For cell-level comparisons, use the default
-Wilcoxon backends without \code{sample_by}. All other values preserve the
-existing Wilcoxon behavior.}
+For every supported object class, \code{test_use = "edgeR"} runs a sample-level
+(pseudobulk) edgeR quasi-likelihood test of \code{group_1} versus \code{group_2}:
+raw counts are summed per sample and group by \code{\link[SCUBA:pseudobulk]{SCUBA::pseudobulk()}} (the
+cell-level matrix is never materialised), profiles with fewer than
+\code{min_cells} cells are dropped, \code{edgeR::filterByExpr()} and TMM normalisation
+are applied, and the model is \code{~ 0 + group} when every sample belongs to one
+group (independent design) or \code{~ sample + group} when samples contribute
+cells to both groups (paired design, e.g. cluster versus cluster within the
+same donors). edgeR needs at least two samples per group (or two paired
+samples; three or more are recommended). When a contrast is not replicated
+enough, the same call runs the cell-level Wilcoxon test of the object's
+class on the cells of the two groups instead, says so in a message, and
+labels the rows \code{method = "wilcoxon"} (see \code{\link[=check_pseudobulk_design]{check_pseudobulk_design()}} to
+predict this from metadata alone). Pseudobulk tests error if \code{sample_by}
+yields about one cell per profile (a cell-level comparison in disguise).
+All other values preserve the existing cell-level Wilcoxon behaviour.}
 
 \item{sample_by}{Metadata column containing biological sample identifiers.
-Required only for the pseudobulk tests (\code{"edgeR"}, \code{"pseudobulk_wilcox"}).}
+Required only for \code{test_use = "edgeR"}.}
 
 \item{group_1, group_2}{The two values of \code{group_by} to compare with a
 pseudobulk test.
@@ -164,7 +191,7 @@ expression in \code{group_1}.}
 \item{min_cells}{Minimum cells required in each sample/group pseudobulk.}
 
 \item{robust}{Whether to use robust empirical Bayes estimation in
-\code{edgeR::glmQLFit()}. Ignored for \code{test_use = "pseudobulk_wilcox"}.}
+\code{edgeR::glmQLFit()}.}
 
 \item{slot}{No longer used. Please use \code{layer} instead.}
 
@@ -177,6 +204,11 @@ on the test used.
 }
 \section{Methods (by class)}{
 \itemize{
+\item \code{run_dge(scuba_pseudobulk)}: Pre-aggregated pseudobulk profiles from
+\code{\link[SCUBA:pseudobulk]{SCUBA::pseudobulk()}}: edgeR on the stored sample x group counts. \code{group_by}
+and \code{sample_by} come from the object; an unreplicated contrast is an error,
+because no cells are available for the Wilcoxon fallback.
+
 \item \code{run_dge(Seurat)}: Seurat objects: uses Presto
 
 \item \code{run_dge(SingleCellExperiment)}: SingleCellExperiment objects: uses Presto by default for
@@ -222,6 +254,19 @@ Groups come from \code{SCUBA::fetch_metadata()}, so metadata columns added in R
 selects the modality (default: the main modality, \code{"X"} for h5ad files);
 \code{layer} defaults to \code{SCUBA::default_layer()} (\code{"X"}), which is assumed to
 hold log-normalised values like a Seurat \code{data} layer. Output schema matches
-the Seurat/Presto path: \verb{group, feature, avgExpr, log2FC, auc, pval, pval_adj, pct_in, pct_out}.
+the Seurat/Presto path: \verb{group, feature, avgExpr, log2FC, auc, pval, pval_adj, pct_in, pct_out}. \code{test_use = "edgeR"} (pseudobulk) is handled
+before dispatch, see above.
 
 }}
+\section{Pseudobulk results}{
+
+edgeR results carry a \code{method} column (\code{"edgeR"}, or \code{"wilcoxon"} after a
+fallback) ahead of the common columns \code{group}, \code{feature}, \code{avgExpr}
+(average log2-CPM for edgeR), \code{log2FC}, \code{pval}, \code{pval_adj}, and an
+\code{edger_details} attribute: \code{design_type} (\code{"independent"} / \code{"paired"}),
+\code{fallback_reason}, \code{sample_summary} (retained and excluded samples per
+group), \code{retained_profiles}, \code{excluded_profiles}, the design matrix and
+contrast or coefficient, \code{genes_tested}, the TMM factors and how the counts
+were aggregated.
+}
+

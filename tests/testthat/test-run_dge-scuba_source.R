@@ -1,11 +1,6 @@
 # File-backed SCUBA objects (scuba_source) must give the same Presto results as the equivalent
 # in-memory Seurat object: same cells, X == Seurat "data" in the AML fixtures.
-skip_if_not_installed("SCUBA")
-skip_if_not(exists("open_h5ad", asNamespace("SCUBA")), "SCUBA without open_h5ad()")
-skip_if_not(
-  isTRUE(tryCatch(SCUBA::scuba_julia_available(quiet = TRUE), error = function(e) FALSE)),
-  "SCUBA's Julia engine is not available"
-)
+skip_if_no_julia()
 
 h5ad <- system.file("extdata", "AML_h5ad.h5ad", package = "SCUBA", mustWork = TRUE)
 withr::local_options(list(SCUBA.engine = "julia"))
@@ -64,4 +59,24 @@ test_that("input validation", {
   expect_error(run_dge(obj, group_by = "Batch", test_use = "scran"), "Presto")
   one <- obj[SCUBA::fetch_cells(obj, "Batch", "BM_200AB"), ]
   expect_error(run_dge(one, group_by = "Batch"), "At least 2 groups")
+})
+
+test_that("pseudobulk edgeR on a file-backed object matches the in-memory Seurat object", {
+  skip_if_no_edger()
+  # paired design: B Cells vs NK Cells within the two batches (the hard minimum of two pairs)
+  args <- list(group_by = "condensed_cell_type", test_use = "edgeR", sample_by = "Batch",
+               group_1 = "B Cells", group_2 = "NK Cells", min_cells = 5L)
+  a <- suppressWarnings(do.call(run_dge, c(list(obj), args)))
+  b <- suppressWarnings(do.call(run_dge, c(list(seurat), args, list(seurat_assay = "RNA"))))
+  expect_s3_class(a, "scDE_edger_results")
+  expect_identical(attr(a, "edger_details")$design_type, "paired")
+  expect_identical(attr(a, "edger_details")$aggregation$engine, "julia")
+  expect_equal(sorted_result(a), sorted_result(b), tolerance = 1e-8)
+  # one sample per batch: the contrast falls back to the chunked Presto test of scuba_source
+  f <- suppressMessages(run_dge(obj, group_by = "Batch", test_use = "edgeR", sample_by = "Batch",
+                                group_1 = "BM_200AB", group_2 = "PBMC_200AB"))
+  expect_true(all(f$method == "wilcoxon"))
+  reference <- run_dge(obj, group_by = "Batch")
+  reference <- reference[reference$group == "BM_200AB", ]
+  expect_equal(sorted_result(f)[, c("feature", "pval")], sorted_result(reference)[, c("feature", "pval")], tolerance = 1e-10)
 })

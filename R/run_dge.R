@@ -6,7 +6,9 @@
 #'
 #' @param object a single-cell object. Currently, Seurat,
 #' SingleCellExperiment, AnnData and file-backed SCUBA (`scuba_source`, see
-#' `SCUBA::open_h5ad()`) objects are supported.
+#' `SCUBA::open_h5ad()`) objects are supported, as well as pre-aggregated
+#' pseudobulk profiles (`scuba_pseudobulk`, see `SCUBA::pseudobulk()`) for
+#' `test_use = "edgeR"`.
 #' @param group_by metadata variable to use for forming differential gene
 #' expression groups. A group will be created for all values in this variable
 #' present in the object passed to this function.
@@ -41,32 +43,42 @@
 #' `scran::findMarkers` with pairwise comparisons combined across all groups
 #' (`pval.type = "any"`); no `auc` column is returned and `log2FC` is computed
 #' from group vs. all-other-cells means (same method as `"scran"`).
-#' For every supported object class, two sample-level (pseudobulk) tests are
-#' available; both require `sample_by`, `group_1`, and `group_2`, aggregate raw
-#' counts per sample and group, and apply TMM normalization and
-#' `edgeR::filterByExpr()`:
-#' `test_use = "edgeR"` runs edgeR quasi-likelihood testing;
-#' `test_use = "pseudobulk_wilcox"` runs a Wilcoxon test on log2-CPM across
-#' samples (rank-sum when each sample belongs to one group, signed-rank on
-#' within-sample differences when samples contribute to both groups). edgeR is
-#' restricted to the former sample-level design; cluster-to-cluster and other
-#' within-sample comparisons must use pseudobulk Wilcoxon or cell-level
-#' Wilcoxon. The
-#' Wilcoxon option needs more samples to have power (roughly 5+ per group).
-#' Pseudobulk tests are sample-level only: they error if `sample_by` yields
-#' about one cell per profile. For cell-level comparisons, use the default
-#' Wilcoxon backends without `sample_by`. All other values preserve the
-#' existing Wilcoxon behavior.
+#' For every supported object class, `test_use = "edgeR"` runs a sample-level
+#' (pseudobulk) edgeR quasi-likelihood test of `group_1` versus `group_2`:
+#' raw counts are summed per sample and group by [SCUBA::pseudobulk()] (the
+#' cell-level matrix is never materialised), profiles with fewer than
+#' `min_cells` cells are dropped, `edgeR::filterByExpr()` and TMM normalisation
+#' are applied, and the model is `~ 0 + group` when every sample belongs to one
+#' group (independent design) or `~ sample + group` when samples contribute
+#' cells to both groups (paired design, e.g. cluster versus cluster within the
+#' same donors). edgeR needs at least two samples per group (or two paired
+#' samples; three or more are recommended). When a contrast is not replicated
+#' enough, the same call runs the cell-level Wilcoxon test of the object's
+#' class on the cells of the two groups instead, says so in a message, and
+#' labels the rows `method = "wilcoxon"` (see [check_pseudobulk_design()] to
+#' predict this from metadata alone). Pseudobulk tests error if `sample_by`
+#' yields about one cell per profile (a cell-level comparison in disguise).
+#' All other values preserve the existing cell-level Wilcoxon behaviour.
 #' @param sample_by Metadata column containing biological sample identifiers.
-#' Required only for the pseudobulk tests (`"edgeR"`, `"pseudobulk_wilcox"`).
+#' Required only for `test_use = "edgeR"`.
 #' @param group_1,group_2 The two values of `group_by` to compare with a
 #' pseudobulk test.
 #' `group_1` is always the numerator, so positive `log2FC` values mean higher
 #' expression in `group_1`.
 #' @param min_cells Minimum cells required in each sample/group pseudobulk.
 #' @param robust Whether to use robust empirical Bayes estimation in
-#' `edgeR::glmQLFit()`. Ignored for `test_use = "pseudobulk_wilcox"`.
+#' `edgeR::glmQLFit()`.
 #' @param ... Additional arguments reserved for methods.
+#'
+#' @section Pseudobulk results:
+#' edgeR results carry a `method` column (`"edgeR"`, or `"wilcoxon"` after a
+#' fallback) ahead of the common columns `group`, `feature`, `avgExpr`
+#' (average log2-CPM for edgeR), `log2FC`, `pval`, `pval_adj`, and an
+#' `edger_details` attribute: `design_type` (`"independent"` / `"paired"`),
+#' `fallback_reason`, `sample_summary` (retained and excluded samples per
+#' group), `retained_profiles`, `excluded_profiles`, the design matrix and
+#' contrast or coefficient, `genes_tested`, the TMM factors and how the counts
+#' were aggregated.
 #'
 #' @rdname run_dge
 #'
@@ -93,7 +105,10 @@ run_dge <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    # Slot parameter has been deprecated and changed to layer for consistency
+    # Slot parameter has been deprecated and changed to layer for consistency.
+    # UseMethod() re-matches the formal arguments from the original call, so a
+    # value assigned to `layer` here would never reach the method: re-dispatch
+    # with the explicit `layer` instead.
     if (lifecycle::is_present(slot)) {
       lifecycle::deprecate_warn(
         when = "0.2.0",
@@ -103,12 +118,67 @@ run_dge <-
           "parameter will be removed in 1.0.0."
         )
       )
+      return(run_dge(
+        object, group_by, layer = slot, seurat_assay = seurat_assay,
+        lfc_format = lfc_format, positive_only = positive_only,
+        remove_raw_pval = remove_raw_pval, test_use = test_use,
+        sample_by = sample_by, group_1 = group_1, group_2 = group_2,
+        min_cells = min_cells, robust = robust, ...
+      ))
+    }
 
-      # Direct slot to layer
-      layer <- slot
+    # Pseudobulk edgeR is class-agnostic (SCUBA aggregates the counts), so it is
+    # handled here, before dispatch, for every supported object class.
+    if (.scde_is_edger(test_use)) {
+      return(.scde_run_pseudobulk(
+        object, group_by = group_by, sample_by = sample_by,
+        group_1 = group_1, group_2 = group_2, layer = layer,
+        assay = seurat_assay, min_cells = min_cells, robust = robust,
+        lfc_format = lfc_format, positive_only = positive_only,
+        remove_raw_pval = remove_raw_pval
+      ))
     }
 
     UseMethod("run_dge")
+  }
+
+#' @describeIn run_dge Pre-aggregated pseudobulk profiles from
+#' [SCUBA::pseudobulk()]: edgeR on the stored sample x group counts. `group_by`
+#' and `sample_by` come from the object; an unreplicated contrast is an error,
+#' because no cells are available for the Wilcoxon fallback.
+#'
+#' @export
+run_dge.scuba_pseudobulk <-
+  function(
+    object,
+    group_by = NULL,
+    layer = NULL,
+    seurat_assay = NULL,
+    lfc_format = "log2",
+    positive_only = FALSE,
+    remove_raw_pval = FALSE,
+    test_use = "edgeR",
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
+  ) {
+    if (!.scde_is_edger(test_use %||% "edgeR")) {
+      stop(
+        "Pre-aggregated scuba_pseudobulk objects support test_use = \"edgeR\" only.",
+        call. = FALSE
+      )
+    }
+    .scde_run_pseudobulk(
+      object, group_by = object$group_by, sample_by = object$sample_by,
+      group_1 = group_1, group_2 = group_2, layer = object$layer,
+      assay = object$assay, min_cells = min_cells, robust = robust,
+      lfc_format = lfc_format, positive_only = positive_only,
+      remove_raw_pval = remove_raw_pval
+    )
   }
 
 #' Function to display an error message when an unsupported object
@@ -165,18 +235,6 @@ run_dge.Seurat <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    pseudobulk_method <- .scde_pseudobulk_method(test_use)
-    if (!is.null(pseudobulk_method)) {
-      .scde_validate_edgeR_args(
-        group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
-      )
-      extracted <- .scde_seurat_counts(object, seurat_assay, layer)
-      return(.scde_run_edger(
-        extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
-        method = pseudobulk_method
-      ))
-    }
     .scde_warn_ignored_sample_by(sample_by)
     # Define layer to use. If not specified by the user, use the
     # default layer, "data"
@@ -437,18 +495,6 @@ run_dge.SingleCellExperiment <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    pseudobulk_method <- .scde_pseudobulk_method(test_use)
-    if (!is.null(pseudobulk_method)) {
-      .scde_validate_edgeR_args(
-        group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
-      )
-      extracted <- .scde_sce_counts(object, layer)
-      return(.scde_run_edger(
-        extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
-        method = pseudobulk_method
-      ))
-    }
     .scde_warn_ignored_sample_by(sample_by)
     # SummarizedExperiment is always needed for matrix/colData extraction
     if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
@@ -774,18 +820,6 @@ run_dge.AnnDataR6 <-
     slot = lifecycle::deprecated(),
     ...
   ) {
-    pseudobulk_method <- .scde_pseudobulk_method(test_use)
-    if (!is.null(pseudobulk_method)) {
-      .scde_validate_edgeR_args(
-        group_by, sample_by, group_1, group_2, min_cells, lfc_format, robust
-      )
-      extracted <- .scde_anndata_counts(object, layer)
-      return(.scde_run_edger(
-        extracted$counts, extracted$metadata, sample_by, group_by,
-        group_1, group_2, min_cells, positive_only, remove_raw_pval, robust,
-        method = pseudobulk_method
-      ))
-    }
     .scde_warn_ignored_sample_by(sample_by)
     if (!requireNamespace("reticulate", quietly = TRUE)) {
       stop(

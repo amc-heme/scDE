@@ -22,7 +22,9 @@ run_dge_multicontrast(
 )
 }
 \arguments{
-\item{object}{A Seurat, SingleCellExperiment, or AnnData object.}
+\item{object}{A Seurat, SingleCellExperiment, AnnData or file-backed SCUBA object
+(\code{scuba_source}), or a pre-aggregated \code{scuba_pseudobulk} from \code{\link[SCUBA:pseudobulk]{SCUBA::pseudobulk()}} (then
+\code{group_by} and \code{sample_by} are taken from the object and no fallback is possible).}
 
 \item{group_by}{Metadata column containing the groups to compare.}
 
@@ -41,10 +43,11 @@ all other observed groups.}
 \item{reference_group}{Reference denominator required when
 \code{contrast_mode = "reference"}.}
 
-\item{layer}{Raw-count layer or assay. Defaults to \code{"counts"}. For AnnData,
-use \code{"X"} or \code{"raw"} explicitly when counts are stored there.}
+\item{layer}{Raw-count layer. Defaults to \code{"counts"}. For AnnData objects whose counts live
+in \code{X} or \code{raw}, pass \code{"X"} or \code{"raw"} explicitly.}
 
-\item{seurat_assay}{Seurat assay containing raw counts. Defaults to \code{"RNA"}.}
+\item{seurat_assay}{Assay / modality holding the raw counts (default: the object's default
+assay, as SCUBA defines it).}
 
 \item{min_cells}{Minimum cells required per sample/comparison-side
 pseudobulk profile.}
@@ -54,29 +57,30 @@ pseudobulk profile.}
 \item{remove_raw_pval}{Whether to remove the raw p-value column.}
 
 \item{robust}{Whether to use robust empirical Bayes estimation in
-\code{edgeR::glmQLFit()}. Ignored for \code{test_use = "pseudobulk_wilcox"}.}
+\code{edgeR::glmQLFit()}.}
 
-\item{p_adjust_scope}{Multiple-testing scope. \code{"contrast"} retains edgeR's
-within-contrast FDR; \code{"global"} replaces \code{pval_adj} with BH adjustment over
+\item{p_adjust_scope}{Multiple-testing scope. \code{"contrast"} retains the within-contrast
+adjustment; \code{"global"} replaces \code{pval_adj} with BH adjustment over
 every returned gene/contrast test; \code{"both"} retains within-contrast
-\code{pval_adj} and adds \code{pval_adj_global}.}
+\code{pval_adj} and adds \code{pval_adj_global}. Global adjustment is applied before
+\code{positive_only} filtering.}
 
-\item{test_use}{Sample-level test: \code{"edgeR"} (default) or
-\code{"pseudobulk_wilcox"}. See \code{\link[=run_dge]{run_dge()}} for details. edgeR is restricted to
-sample-level groups where each sample belongs to one group; use pseudobulk
-Wilcoxon for paired cluster contrasts. Cell-level tests are not available
-here; \code{sample_by} must identify biological samples.}
+\item{test_use}{Only \code{"edgeR"} is supported here; cell-level tests are the per-contrast
+fallback, not a choice.}
 }
 \value{
-A tibble containing the common scDE result columns plus \code{group_1},
-\code{group_2}, and \code{contrast}. Per-contrast details are stored in the
-\code{edger_multicontrast_details} attribute (\code{pseudobulk_multicontrast_details}
-for \code{test_use = "pseudobulk_wilcox"}).
+A tibble with the columns \code{group_1}, \code{group_2}, \code{contrast}, \code{method}, \code{group},
+\code{feature}, \code{avgExpr}, \code{log2FC}, \code{pval}, \code{pval_adj} (and, for rows from the Wilcoxon fallback,
+\code{auc}, \code{pct_in}, \code{pct_out}; \code{NA} on edgeR rows). The \code{edger_multicontrast_details} attribute
+holds the contrast table (with \code{method}, \code{design_type} and \code{reason}) and the per-contrast
+details.
 }
 \description{
-Runs a collection of two-group pseudobulk comparisons (edgeR
-quasi-likelihood or pseudobulk Wilcoxon) while
-reusing scDE's raw-count extraction, pseudobulk aggregation, sample pairing,
-and design validation. This is particularly useful for comparing cell-level
-groups such as clusters across biological samples.
+Runs a collection of two-group pseudobulk edgeR comparisons on one object, aggregating the
+raw counts once (through \code{\link[SCUBA:pseudobulk]{SCUBA::pseudobulk()}}) and testing every contrast on the resulting
+sample x group profiles. Contrasts that are not replicated enough for edgeR (see
+\code{\link[=check_pseudobulk_design]{check_pseudobulk_design()}}) fall back to the cell-level Wilcoxon test of \code{\link[=run_dge]{run_dge()}}; the
+\code{method} column of the result says which test produced each row. This is the natural way to
+compare cell-level groups such as clusters across biological samples: those contrasts are
+paired designs (\code{~ sample + group}), which edgeR handles.
 }
