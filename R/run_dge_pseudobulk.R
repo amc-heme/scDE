@@ -471,3 +471,9 @@
 .scde_subset_cells.SingleCellExperiment <- function(object, cells) object[, cells]
 .scde_subset_cells.scuba_source <- function(object, cells) object[cells]
 .scde_subset_cells.AnnDataR6 <- function(object, cells) object[cells, ]
+# Python AnnData objects reticulate did not wrap (created with `convert = FALSE`, or any object
+# under Python anndata >= 0.11): indexing goes through Python, so pass the names as a Python list.
+.scde_subset_cells.anndata.AnnData <- function(object, cells) {
+  object[reticulate::r_to_py(as.character(cells)), ]
+}
+.scde_subset_cells.anndata._core.anndata.AnnData <- .scde_subset_cells.anndata.AnnData
