@@ -1,7 +1,7 @@
 Package: scDE
 Type: Package
 Title: Unified Single Cell Differential Expression
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: 
     c(
     person("William", "Showers", email = "bill.showers@refinedscience.com", role = c("aut", "cre")),
@@ -11,7 +11,9 @@ Authors@R:
 Description:
     Tools for performing differential expression analysis in single cell objects
     and returning common results. scDE currently accepts Seurat,
-    SingleCellExperiment, and AnnData objects.
+    SingleCellExperiment, AnnData and file-backed SCUBA (scuba_source) objects,
+    with cell-level Wilcoxon tests and sample-level (pseudobulk) edgeR tests
+    whose aggregation is delegated to SCUBA.
 Imports:
   presto,
   tibble,
@@ -21,22 +23,34 @@ Imports:
   Matrix,
   MatrixGenerics,
   bslib,
-  SCUBA,
+  SCUBA (>= 2.0.0.9000),
   lifecycle
 Suggests:
+  edgeR (>= 4.0.0),
   testthat (>= 3.0.0),
+  withr,
   reticulate,
   anndata,
+  SeuratObject,
   SingleCellExperiment,
   SummarizedExperiment,
-  scran
+  scran,
+  DelayedArray,
+  DelayedMatrixStats,
+  HDF5Array,
+  BPCells,
+  sparseMatrixStats,
+  JuliaCall
 Remotes: 
   github::amc-heme/presto,
-  github::amc-heme/SCUBA
+  github::amc-heme/SCUBA@feature/julia-engine
+Additional_repositories: 
+  https://bnprks.r-universe.dev
 License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
 LazyData: true
 Depends: 
     R (>= 2.10)

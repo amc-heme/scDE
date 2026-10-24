@@ -5,7 +5,10 @@
 #' on the test used.
 #'
 #' @param object a single-cell object. Currently, Seurat,
-#' SingleCellExperiment, and AnnData objects are supported.
+#' SingleCellExperiment, AnnData and file-backed SCUBA (`scuba_source`, see
+#' `SCUBA::open_h5ad()`) objects are supported, as well as pre-aggregated
+#' pseudobulk profiles (`scuba_pseudobulk`, see `SCUBA::pseudobulk()`) for
+#' `test_use = "edgeR"`.
 #' @param group_by metadata variable to use for forming differential gene
 #' expression groups. A group will be created for all values in this variable
 #' present in the object passed to this function.
@@ -40,6 +43,42 @@
 #' `scran::findMarkers` with pairwise comparisons combined across all groups
 #' (`pval.type = "any"`); no `auc` column is returned and `log2FC` is computed
 #' from group vs. all-other-cells means (same method as `"scran"`).
+#' For every supported object class, `test_use = "edgeR"` runs a sample-level
+#' (pseudobulk) edgeR quasi-likelihood test of `group_1` versus `group_2`:
+#' raw counts are summed per sample and group by [SCUBA::pseudobulk()] (the
+#' cell-level matrix is never materialised), profiles with fewer than
+#' `min_cells` cells are dropped, `edgeR::filterByExpr()` and TMM normalisation
+#' are applied, and the model is `~ 0 + group` when every sample belongs to one
+#' group (independent design) or `~ sample + group` when samples contribute
+#' cells to both groups (paired design, e.g. cluster versus cluster within the
+#' same donors). edgeR needs at least two samples per group (or two paired
+#' samples; three or more are recommended). When a contrast is not replicated
+#' enough, the same call runs the cell-level Wilcoxon test of the object's
+#' class on the cells of the two groups instead, says so in a message, and
+#' labels the rows `method = "wilcoxon"` (see [check_pseudobulk_design()] to
+#' predict this from metadata alone). Pseudobulk tests error if `sample_by`
+#' yields about one cell per profile (a cell-level comparison in disguise).
+#' All other values preserve the existing cell-level Wilcoxon behaviour.
+#' @param sample_by Metadata column containing biological sample identifiers.
+#' Required only for `test_use = "edgeR"`.
+#' @param group_1,group_2 The two values of `group_by` to compare with a
+#' pseudobulk test.
+#' `group_1` is always the numerator, so positive `log2FC` values mean higher
+#' expression in `group_1`.
+#' @param min_cells Minimum cells required in each sample/group pseudobulk.
+#' @param robust Whether to use robust empirical Bayes estimation in
+#' `edgeR::glmQLFit()`.
+#' @param ... Additional arguments reserved for methods.
+#'
+#' @section Pseudobulk results:
+#' edgeR results carry a `method` column (`"edgeR"`, or `"wilcoxon"` after a
+#' fallback) ahead of the common columns `group`, `feature`, `avgExpr`
+#' (average log2-CPM for edgeR), `log2FC`, `pval`, `pval_adj`, and an
+#' `edger_details` attribute: `design_type` (`"independent"` / `"paired"`),
+#' `fallback_reason`, `sample_summary` (retained and excluded samples per
+#' group), `retained_profiles`, `excluded_profiles`, the design matrix and
+#' contrast or coefficient, `genes_tested`, the TMM factors and how the counts
+#' were aggregated.
 #'
 #' @rdname run_dge
 #'
@@ -58,10 +97,18 @@ run_dge <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
     slot = lifecycle::deprecated(),
     ...
   ) {
-    # Slot parameter has been deprecated and changed to layer for consistency
+    # Slot parameter has been deprecated and changed to layer for consistency.
+    # UseMethod() re-matches the formal arguments from the original call, so a
+    # value assigned to `layer` here would never reach the method: re-dispatch
+    # with the explicit `layer` instead.
     if (lifecycle::is_present(slot)) {
       lifecycle::deprecate_warn(
         when = "0.2.0",
@@ -71,12 +118,67 @@ run_dge <-
           "parameter will be removed in 1.0.0."
         )
       )
+      return(run_dge(
+        object, group_by, layer = slot, seurat_assay = seurat_assay,
+        lfc_format = lfc_format, positive_only = positive_only,
+        remove_raw_pval = remove_raw_pval, test_use = test_use,
+        sample_by = sample_by, group_1 = group_1, group_2 = group_2,
+        min_cells = min_cells, robust = robust, ...
+      ))
+    }
 
-      # Direct slot to layer
-      layer <- slot
+    # Pseudobulk edgeR is class-agnostic (SCUBA aggregates the counts), so it is
+    # handled here, before dispatch, for every supported object class.
+    if (.scde_is_edger(test_use)) {
+      return(.scde_run_pseudobulk(
+        object, group_by = group_by, sample_by = sample_by,
+        group_1 = group_1, group_2 = group_2, layer = layer,
+        assay = seurat_assay, min_cells = min_cells, robust = robust,
+        lfc_format = lfc_format, positive_only = positive_only,
+        remove_raw_pval = remove_raw_pval
+      ))
     }
 
     UseMethod("run_dge")
+  }
+
+#' @describeIn run_dge Pre-aggregated pseudobulk profiles from
+#' [SCUBA::pseudobulk()]: edgeR on the stored sample x group counts. `group_by`
+#' and `sample_by` come from the object; an unreplicated contrast is an error,
+#' because no cells are available for the Wilcoxon fallback.
+#'
+#' @export
+run_dge.scuba_pseudobulk <-
+  function(
+    object,
+    group_by = NULL,
+    layer = NULL,
+    seurat_assay = NULL,
+    lfc_format = "log2",
+    positive_only = FALSE,
+    remove_raw_pval = FALSE,
+    test_use = "edgeR",
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
+  ) {
+    if (!.scde_is_edger(test_use %||% "edgeR")) {
+      stop(
+        "Pre-aggregated scuba_pseudobulk objects support test_use = \"edgeR\" only.",
+        call. = FALSE
+      )
+    }
+    .scde_run_pseudobulk(
+      object, group_by = object$group_by, sample_by = object$sample_by,
+      group_1 = group_1, group_2 = group_2, layer = object$layer,
+      assay = object$assay, min_cells = min_cells, robust = robust,
+      lfc_format = lfc_format, positive_only = positive_only,
+      remove_raw_pval = remove_raw_pval
+    )
   }
 
 #' Function to display an error message when an unsupported object
@@ -94,13 +196,20 @@ run_dge.default <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
-    slot = lifecycle::deprecated()
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
   ) {
     warning(
       paste0(
         "run_dge does not know how to handle object of class ",
         paste(class(object), collapse = ", "),
-        ". Currently supported classes: Seurat, SingleCellExperiment, and AnnData."
+        ". Currently supported classes: Seurat, SingleCellExperiment, AnnData ",
+        "and scuba_source."
       )
     )
   }
@@ -118,8 +227,15 @@ run_dge.Seurat <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
-    slot = lifecycle::deprecated()
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
   ) {
+    .scde_warn_ignored_sample_by(sample_by)
     # Define layer to use. If not specified by the user, use the
     # default layer, "data"
     layer <- layer %||% SCUBA::default_layer(object)
@@ -280,51 +396,54 @@ run_dge.Seurat <-
           if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
         }
     } else if (test_use == "Presto") {
+      # Call Presto's matrix method directly. The Seurat adapter in older
+      # releases of Presto calls GetAssayData(slot = ...), which is defunct in
+      # SeuratObject >= 5.3. Extracting the layer here preserves the Wilcoxon
+      # calculation while remaining compatible with both Assay and Assay5.
+      expression_matrix <-
+        if (inherits(object[[seurat_assay]], "Assay5")) {
+          available_layers <- SeuratObject::Layers(object[[seurat_assay]])
+          if (!layer %in% available_layers) {
+            stop(
+              "Layer '", layer, "' was not found in assay '",
+              seurat_assay, "'. Available layers: ",
+              paste(available_layers, collapse = ", "), "."
+            )
+          }
+          SeuratObject::LayerData(object[[seurat_assay]], layer = layer)
+        } else {
+          SeuratObject::GetAssayData(
+            object = object,
+            assay = seurat_assay,
+            layer = layer
+          )
+        }
+
+      if (!group_by %in% colnames(object[[]])) {
+        stop("Metadata column '", group_by, "' was not found in the Seurat object.")
+      }
+      groups <- object[[]][[group_by]]
+      if (length(groups) != ncol(expression_matrix)) {
+        stop("Expression-matrix cells and grouping metadata are misaligned.")
+      }
+      if (anyNA(groups)) {
+        stop("Metadata column '", group_by, "' contains missing values.")
+      }
+
       # Run presto
       dge_table <-
         presto::wilcoxauc(
-          object,
-          group_by = group_by,
-          assay = layer,
-          seurat_assay = seurat_assay
+          expression_matrix,
+          y = groups
         )
 
-      # Convert to tibble, remove wilcoxon rank sum U statistic
+      # Remove the Wilcoxon rank-sum U statistic, then apply the filters, LFC
+      # format and column layout shared by every Presto-based method
       dge_table <-
-        dge_table %>%
-        tibble::as_tibble() %>%
-        dplyr::select(-statistic) %>%
-        # Remove p-value column if specified (only shows adjusted p-value)
-        {
-          if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
-        } %>%
-        # Return only genes that are upregulated in each group
-        # if positive_only is TRUE
-        {
-          if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .
-        } %>%
-        # Sort by group, then by adjusted p-value, then by descending LFC
-        dplyr::arrange(group, padj, desc(abs(logFC)))
-
-      # Convert to log2FC format if desired by user
-      if (lfc_format == "log2") {
-        dge_table$logFC <-
-          scDE:::ln_to_log2(dge_table$logFC)
-
-        # Rename column to specify log2FC values
-        dge_table <-
-          dge_table %>%
-          dplyr::rename(log2FC = logFC)
-      }
-
-      # Rename adjusted p-value column to pval_adj
-      dge_table <-
-        dge_table %>%
-        dplyr::rename(pval_adj = padj)
-
-      # Put group before feature column
-      dge_table <-
-        dplyr::relocate(dge_table, group, .before = feature)
+        .presto_table(
+          dplyr::select(tibble::as_tibble(dge_table), -statistic),
+          lfc_format, positive_only, remove_raw_pval
+        )
     }
 
     dge_table
@@ -368,8 +487,15 @@ run_dge.SingleCellExperiment <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
-    slot = lifecycle::deprecated()
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
   ) {
+    .scde_warn_ignored_sample_by(sample_by)
     # SummarizedExperiment is always needed for matrix/colData extraction
     if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
       stop(
@@ -476,27 +602,8 @@ run_dge.SingleCellExperiment <-
       dge_table <-
         presto::wilcoxauc(mat, y = groups) %>%
         tibble::as_tibble() %>%
-        dplyr::select(-statistic) %>%
-        {
-          if (remove_raw_pval == TRUE) dplyr::select(., -pval) else .
-        } %>%
-        {
-          if (positive_only == TRUE) dplyr::filter(., logFC > 0) else .
-        } %>%
-        dplyr::arrange(group, padj, desc(abs(logFC)))
-
-      # Convert to log2FC format if desired by user
-      if (lfc_format == "log2") {
-        dge_table$logFC <- scDE:::ln_to_log2(dge_table$logFC)
-        dge_table <- dge_table %>% dplyr::rename(log2FC = logFC)
-      }
-
-      dge_table <-
-        dge_table %>%
-        dplyr::rename(pval_adj = padj) %>%
-        dplyr::relocate(group, .before = feature)
-
-      return(dge_table)
+        dplyr::select(-statistic)
+      return(.presto_table(dge_table, lfc_format, positive_only, remove_raw_pval))
     }
 
     # MatrixGenerics::rowMeans2 (called below) dispatches on matrix class.
@@ -705,8 +812,15 @@ run_dge.AnnDataR6 <-
     positive_only = FALSE,
     remove_raw_pval = FALSE,
     test_use = NULL,
-    slot = lifecycle::deprecated()
+    sample_by = NULL,
+    group_1 = NULL,
+    group_2 = NULL,
+    min_cells = 10L,
+    robust = FALSE,
+    slot = lifecycle::deprecated(),
+    ...
   ) {
+    .scde_warn_ignored_sample_by(sample_by)
     if (!requireNamespace("reticulate", quietly = TRUE)) {
       stop(
         "Package 'reticulate' is required for AnnData objects. ",
