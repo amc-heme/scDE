@@ -8,8 +8,10 @@
 <url><loc>https://amc-heme.github.io/scDE/index.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/AML_Seurat.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/AML_h5ad.html</loc></url>
+<url><loc>https://amc-heme.github.io/scDE/reference/check_pseudobulk_design.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/index.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/run_dge.html</loc></url>
+<url><loc>https://amc-heme.github.io/scDE/reference/run_dge_multicontrast.html</loc></url>
 <url><loc>https://amc-heme.github.io/scDE/reference/scDE-package.html</loc></url>
 </urlset>
 

@@ -2,7 +2,9 @@
 
 Tools for performing differential expression analysis in single cell
 objects and returning common results. scDE currently accepts Seurat,
-SingleCellExperiment, and AnnData objects.
+SingleCellExperiment, AnnData and file-backed SCUBA (scuba_source)
+objects, with cell-level Wilcoxon tests and sample-level (pseudobulk)
+edgeR tests whose aggregation is delegated to SCUBA.
 
 ## Author
 

@@ -6,5 +6,9 @@
   : AML Reference Dataset
 - [`AML_h5ad()`](https://amc-heme.github.io/scDE/reference/AML_h5ad.md)
   : anndata reference dataset
+- [`check_pseudobulk_design()`](https://amc-heme.github.io/scDE/reference/check_pseudobulk_design.md)
+  : Decide which contrasts can be tested with pseudobulk edgeR
 - [`run_dge()`](https://amc-heme.github.io/scDE/reference/run_dge.md) :
   Differential Gene Expression
+- [`run_dge_multicontrast()`](https://amc-heme.github.io/scDE/reference/run_dge_multicontrast.md)
+  : Multi-contrast pseudobulk differential expression

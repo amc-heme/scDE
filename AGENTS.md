@@ -1,8 +1,10 @@
 # AGENTS.md
 
-R package: `scDE` v0.2.0.9000. Single-package repo (no monorepo).
-Unified DGE for Seurat, SingleCellExperiment, and AnnData single-cell
-objects.
+R package: `scDE` v0.4.0. Single-package repo (no monorepo). Unified DGE
+for Seurat, SingleCellExperiment, AnnData and file-backed SCUBA
+(`scuba_source`) single-cell objects: cell-level Wilcoxon tests per
+class, plus a class-agnostic sample-level (pseudobulk) edgeR test whose
+aggregation is delegated to SCUBA.
 
 ## Developer commands
 
@@ -10,12 +12,16 @@ objects.
 
 devtools::document()    # regenerate man/ + NAMESPACE (roxygen2)
 devtools::load_all()    # interactive dev
+devtools::test()        # testthat edition 3
 devtools::check()       # CRAN-style check
 pkgdown::build_site()   # docs site
 ```
 
-**No test suite exists.** `testthat` is in `Suggests` but `tests/`
-directory does not exist.
+Tests: `tests/testthat/` (edition 3). Skip helpers in `helper-skips.R`
+gate three optional tiers: edgeR (\>= 4.0.0), a Python with anndata
+(reticulate), and SCUBA’s Julia engine (`SCUBA_JL_PATH` pointing at a
+SCUBA.jl checkout with `ScubaR.pseudobulk`). Object builders and the
+hand-aggregated `fixture_pseudobulk()` live in `helper-edger.R`.
 
 ## Generated files — never hand-edit
 
@@ -29,25 +35,25 @@ Two deps are GitHub-only and must be installed from the org fork:
 
 ``` r
 
-remotes::install_github("amc-heme/presto")   # NOT the CRAN presto
-remotes::install_github("amc-heme/SCUBA")    # internal org package
+remotes::install_github("amc-heme/presto")                              # NOT the CRAN presto
+remotes::install_github("amc-heme/SCUBA@feature/julia-engine")      # SCUBA >= 2.0.0.9000 with pseudobulk()
 ```
 
-`BPCells` is a conditional runtime dep (used inside `run_dge.Seurat` for
-`IterableMatrix`) but **not listed in DESCRIPTION**. Install separately
-if working with BPCells matrices.
+`edgeR` (\>= 4.0.0) is in Suggests, guarded by
+[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html);
+applications that expose the edgeR test (cellDIVER) list it in their own
+Imports. `BPCells` is a conditional runtime dep (used inside
+`run_dge.Seurat` for `IterableMatrix`) but **not listed in Imports**.
 
 ## AnnData / Python path
 
 `run_dge.AnnDataR6` calls
 [`reticulate::source_python()`](https://rstudio.github.io/reticulate/reference/source_python.html)
 on `inst/extdata/python/scanpy_dge.py` at runtime. Python env must have
-`scanpy`, `anndata`, `pandas`.
-
-CI pins Python 3.11 with a virtualenv named `"r-reticulate"`. Locally,
-set `RETICULATE_PYTHON` or call
-[`reticulate::use_virtualenv()`](https://rstudio.github.io/reticulate/reference/use_python.html)
-before using the AnnData method.
+`scanpy`, `anndata`, `pandas`. Note that the anndata R package \>= 0.8
+returns plain reticulate objects of class `anndata.AnnData`, not
+`AnnDataR6`; the cell-level methods only dispatch on `AnnDataR6`, while
+the pseudobulk path works for both (SCUBA handles the class).
 
 `AML_h5ad` is a **function** — call
 [`AML_h5ad()`](https://amc-heme.github.io/scDE/reference/AML_h5ad.md),
@@ -55,18 +61,86 @@ not `data(AML_h5ad)`.
 
 ## S3 dispatch
 
-`run_dge` dispatches on object class: - `Seurat` → presto
+`run_dge` dispatches on object class for the cell-level tests: -
+`Seurat` → presto
 ([`presto::wilcoxauc`](https://rdrr.io/pkg/presto/man/wilcoxauc.html))
-or BPCells (`BPCells::marker_features`) based on matrix class at
-runtime - `SingleCellExperiment` → presto
-([`presto::wilcoxauc`](https://rdrr.io/pkg/presto/man/wilcoxauc.html))
-for in-memory matrices, scran
+or BPCells
+([`BPCells::marker_features`](https://bnprks.github.io/BPCells/reference/marker_features.html))
+based on matrix class at runtime - `SingleCellExperiment` → presto for
+in-memory matrices, scran
 ([`scran::pairwiseWilcox`](https://rdrr.io/pkg/scran/man/pairwiseWilcox.html)
 or
 [`scran::findMarkers`](https://rdrr.io/pkg/scran/man/findMarkers.html))
-for DelayedArray-backed matrices; backend controlled by `test_use`
-param - `AnnDataR6` → Python scanpy via reticulate - `default` →
-warning + NULL
+for DelayedArray-backed matrices; backend controlled by `test_use` -
+`AnnDataR6` → Python scanpy via reticulate - `scuba_source` → presto on
+[`SCUBA::fetch_matrix()`](https://amc-heme.github.io/SCUBA/reference/fetch_matrix.html)
+blocks of `options(scDE.chunk_features)` (2000) features; BH recomputed
+per group over all features. Presto post-processing shared in
+`.presto_table()` (`R/run_dge_scuba_source.R`). - `scuba_pseudobulk`
+(pre-aggregated profiles from
+[`SCUBA::pseudobulk()`](https://amc-heme.github.io/SCUBA/reference/pseudobulk.html))
+→ edgeR only - `default` → warning + NULL
+
+**`test_use = "edgeR"` is intercepted in the generic, before
+[`UseMethod()`](https://rdrr.io/r/base/UseMethod.html)**
+(`.scde_is_edger()` → `.scde_run_pseudobulk()` in
+`R/run_dge_pseudobulk.R`), so it is class-agnostic. Note that
+[`UseMethod()`](https://rdrr.io/r/base/UseMethod.html) re-matches the
+formals from the original call, so a formal modified in the generic
+never reaches the method; that is why the deprecated `slot` argument
+re-dispatches with an explicit `layer`.
+
+## Pseudobulk edgeR (R/run_dge_pseudobulk.R, R/check_pseudobulk_design.R)
+
+Flow of `.scde_run_pseudobulk()`: 1.
+`SCUBA::pseudobulk_design(object, sample_by, group_by)` — metadata only,
+no expression read. Per-cell sample ids (median profile size \< 2)
+error. 2.
+[`check_pseudobulk_design()`](https://amc-heme.github.io/scDE/reference/check_pseudobulk_design.md)
+(exported; the same policy cellDIVER shows before a run): a profile
+counts when `n_cells >= min_cells`; design is **paired** when a sample
+has both sides (fit `~ sample + group`, test the group coefficient) else
+**independent** (`~ 0 + group`, contrast `group_1 - group_2`); edgeR
+needs `min_replicates` (2) samples per side or paired samples, warns
+below 3. `group_2 = "rest"` pools the other groups per sample. 3.
+Replicated →
+[`SCUBA::pseudobulk()`](https://amc-heme.github.io/SCUBA/reference/pseudobulk.html)
+once (never materialises cells x features),
+`.scde_validate_pseudobulk_counts()` on the small matrix
+(integer-valued, finite, `fun == "sum"`), `.scde_contrast_counts()`
+(rest = column sums of member profiles), `.scde_test_edger()`: `DGEList`
+→ `filterByExpr(group=)` → `normLibSizes("TMM")` → `glmQLFit(robust=)`
+(edgeR 4 estimates dispersion itself; no `estimateDisp`) →
+`glmQLFTest(contrast | coef)` → `topTags(sort.by = "none")`. 4. Not
+replicated → **automatic fallback** to the object’s cell-level Wilcoxon
+(`.scde_cell_level_contrast()`:
+[`run_dge()`](https://amc-heme.github.io/scDE/reference/run_dge.md) on
+the cells of the two groups via `.scde_subset_cells()`, or the
+one-vs-rest rows of a full run for `"rest"`), with a
+[`message()`](https://rdrr.io/r/base/message.html). Pre-aggregated
+objects error instead.
+
+Output: `method` (“edgeR” \| “wilcoxon”) first, then
+`group, feature, avgExpr, log2FC, pval, pval_adj` (fallback rows also
+carry `auc, pct_in, pct_out`); class `scDE_edger_results` for edgeR;
+attr `edger_details`:
+`method, design_type ("independent" | "paired" | NA), group_1, group_2, min_cells, fallback_reason, sample_summary(group, retained_samples, excluded_samples), retained_profiles, excluded_profiles(+ exclusion_reason), design_matrix, contrast | coef, genes_tested, normalization_method, normalization_factors, robust, aggregation(assay, layer, fun, engine, source_class)`.
+cellDIVER reads `sample_summary`, `excluded_profiles`, `design_type` and
+`fallback_reason`; keep those names stable. `avgExpr` is edgeR’s average
+log2-CPM.
+
+[`run_dge_multicontrast()`](https://amc-heme.github.io/scDE/reference/run_dge_multicontrast.md)
+aggregates **once** (only if any contrast is replicated), runs edgeR per
+replicated contrast and the fallback per unreplicated one (one-vs-rest
+fallbacks share a single cell-level run), binds the union schema
+(`group_1, group_2, contrast, method, ...`; NA where a column does not
+apply), applies `p_adjust_scope` **before** `positive_only`, and stores
+`contrast_table` (with `method`, `design_type`, `reason`) in
+`edger_multicontrast_details`. A contrast that fails for a reason other
+than replication aborts the call.
+
+There is no pseudobulk Wilcoxon option (removed in 0.4.0); the
+cell-level Wilcoxon is the only fallback.
 
 ## Output column normalization by backend
 
@@ -75,9 +149,11 @@ common schema. Key renames: - **Presto**: `padj` → `pval_adj`, `logFC` →
 `log2FC` - **BPCells**: `foreground` → `group`, `p_val_raw` → `pval`,
 `foreground_mean` → `avgExpr`; `pval_adj` added via BH - **AnnData**:
 `names` → `feature`, `logfoldchanges` → `log2FC`, `pvals` → `pval`,
-`pvals_adj` → `pval_adj`
+`pvals_adj` → `pval_adj` - **edgeR**: `logCPM` → `avgExpr`, `logFC` →
+`log2FC`, `PValue` → `pval`, `FDR` → `pval_adj`
 
-Final sort: `group, pval_adj, desc(abs(log2FC))`.
+Final sort: `group, pval_adj, desc(abs(log2FC))` (multicontrast:
+`contrast, pval_adj, desc(abs(log2FC))`).
 
 ## Known limitations / gotchas
 
