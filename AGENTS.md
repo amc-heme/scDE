@@ -24,7 +24,7 @@ Two deps are GitHub-only and must be installed from the org fork:
 
 ```r
 remotes::install_github("amc-heme/presto")                              # NOT the CRAN presto
-remotes::install_github("amc-heme/SCUBA@feature/pseudobulk-scuba")      # SCUBA >= 2.0.0.9000 with pseudobulk()
+remotes::install_github("amc-heme/SCUBA@feature/julia-engine")      # SCUBA >= 2.0.0.9000 with pseudobulk()
 ```
 
 `edgeR` (>= 4.0.0) is in Suggests, guarded by `requireNamespace()`; applications that expose the edgeR test (cellDIVER) list it in their own Imports. `BPCells` is a conditional runtime dep (used inside `run_dge.Seurat` for `IterableMatrix`) but **not listed in Imports**.

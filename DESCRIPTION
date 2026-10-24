@@ -43,7 +43,7 @@ Suggests:
   JuliaCall
 Remotes: 
   github::amc-heme/presto,
-  github::amc-heme/SCUBA@feature/pseudobulk-scuba
+  github::amc-heme/SCUBA@feature/julia-engine
 Additional_repositories: 
   https://bnprks.r-universe.dev
 License: MIT + file LICENSE
