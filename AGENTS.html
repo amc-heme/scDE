@@ -56,7 +56,7 @@
 <p>Two deps are GitHub-only and must be installed from the org fork:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"amc-heme/presto"</span><span class="op">)</span>                              <span class="co"># NOT the CRAN presto</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"amc-heme/SCUBA@feature/julia-engine"</span><span class="op">)</span>      <span class="co"># SCUBA &gt;= 2.0.0.9000 with pseudobulk()</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"amc-heme/SCUBA"</span><span class="op">)</span>      <span class="co"># SCUBA &gt;= 2.0.0.9000 with pseudobulk()</span></span></code></pre></div>
 <p><code>edgeR</code> (&gt;= 4.0.0) is in Suggests, guarded by <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code>; applications that expose the edgeR test (cellDIVER) list it in their own Imports. <code>BPCells</code> is a conditional runtime dep (used inside <code>run_dge.Seurat</code> for <code>IterableMatrix</code>) but <strong>not listed in Imports</strong>.</p>
 </div>
 <div class="section level2">
